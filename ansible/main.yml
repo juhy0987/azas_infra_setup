@@ -1,0 +1,5 @@
+---
+- name: "main"
+  hosts: localhost
+  
+  
