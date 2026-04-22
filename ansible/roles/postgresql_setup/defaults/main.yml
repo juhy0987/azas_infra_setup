@@ -1,0 +1,7 @@
+db_name: "scott_db"
+db_user: "scott"
+db_pass: "tiger"
+
+pg_data_dir: "/var/lib/pgsql/data/"
+pg_hba_path: "{{ pg_data_dir }}/pg_hba.conf"
+pg_conf_path: "{{ pg_data_dir }}/postgresql.conf"
