@@ -60,29 +60,6 @@
     name: postgresql
     state: restarted
 
-- name: 7. 사용자 생성
-  postgresql_user:
-    name: "{{ db_user }}"
-    password: "{{ db_pass }}"
-  become: yes
-  become_user: postgres
 
-- name: 8. DB 생성
-  postgresql_db:
-    name: "{{ db_name }}"
-    owner: "{{ db_user }}"
-  become: yes
-  become_user: postgres
 
-- name: 9. postgres 비밀번호 설정
-  postgresql_user:
-    name: postgres
-    password: "postgres"
-  become: yes
-  become_user: postgres
 
-# handlers 대신 직접 재시작
-- name: 10. PostgreSQL 재시작
-  systemd:
-    name: postgresql
-    state: restarted
