@@ -1,0 +1,4 @@
+---
+# Role-level vars intentionally empty.
+# bootstrap_user is defined in defaults/main.yml so that environment or
+# inventory overrides can take effect without being masked by role vars.
