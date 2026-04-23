@@ -1,6 +1,7 @@
-db_name: "scott_db"
-db_user: "scott"
-db_pass: "tiger"
+db_name: "{{ lookup('env', 'DB_NAME') | default('scott_db', true) }}"
+db_user: "{{ lookup('env', 'DB_USER') | default('scott', true) }}"
+db_pass: "{{ lookup('env', 'DB_PASS') }}"
+postgres_admin_password: "{{ lookup('env', 'POSTGRES_ADMIN_PASSWORD') }}"
 
 pg_data_dir: "/var/lib/pgsql/data/"
 pg_hba_path: "{{ pg_data_dir }}/pg_hba.conf"
