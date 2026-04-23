@@ -1,0 +1,65 @@
+---
+- name: 1. 필수 패키지 설치
+  dnf:
+    name: "{{ postgres_packages }}"
+    state: present
+
+- name: 2. DB 초기화
+  command: postgresql-setup --initdb
+  args:
+    creates: "{{ pg_data_dir }}/PG_VERSION"
+
+- name: 3. listen_addresses 설정
+  lineinfile:
+    path: "{{ pg_conf_path }}"
+    regexp: "^#?listen_addresses"
+    line: "listen_addresses = '*'"
+  
+- name: 4. localhost md5 인증 설정
+  replace:
+    path: "{{ pg_hba_path }}"
+    regexp: '^(host\s+all\s+all\s+(127\.0\.0\.1\/32|::1\/128)\s+)(ident|scram-sha-256|trust|peer)$'
+    replace: '\1md5'
+
+- name: 5. 외부 접속 허용 추가
+  lineinfile:
+    path: "{{ pg_hba_path }}"
+    line: "host     all     all     0.0.0.0/0     md5"
+    insertafter: EOF
+ 
+- name: 6. PostgreSQL 서비스 시작 및 활성화
+  systemd:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: 7. postgres 비밀번호 설정
+  postgresql_user:
+    name: postgres
+    password: "{{ postgres_admin_password }}"
+  become: yes
+  become_user: postgres
+
+- name: 8. 사용자 생성
+  postgresql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_pass }}"
+  become: yes
+  become_user: postgres
+
+- name: 9. DB 생성
+  postgresql_db:
+    name: "{{ db_name }}"
+    owner: "{{ db_user }}"
+  become: yes
+  become_user: postgres
+
+# handlers 대신 직접 재시작
+- name: 10. PostgreSQL 재시작
+  systemd:
+    name: postgresql
+    state: restarted
+
+
+
+
