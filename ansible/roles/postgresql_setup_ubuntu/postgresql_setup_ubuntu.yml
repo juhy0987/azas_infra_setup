@@ -3,4 +3,4 @@
   become: yes
 
   roles:
-    - postgresql_setup
+    - postgresql_setup_ubuntu
