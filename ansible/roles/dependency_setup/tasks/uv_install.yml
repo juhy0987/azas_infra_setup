@@ -19,8 +19,6 @@
   environment:
     UV_INSTALL_DIR: "{{ uv_install_dir }}"
   when: not uv_stat.stat.exists
-  register: uv_install_result
-  changed_when: uv_install_result.rc == 0
 
 - name: "4. 설치 스크립트 정리"
   file:
