@@ -5,7 +5,7 @@
   remote_user: ec2-user
 
   vars:
-    ansible_ssh_private_key_file: "{{ lookup('env', 'SSH_KEY_PATH') }}"
+    # ansible_ssh_private_key_file: "{{ lookup('env', 'SSH_KEY_PATH') }}"
     db_user: "{{ lookup('env', 'DB_USER') }}"
     db_pass: "{{ lookup('env', 'DB_PASS') }}"
     db_name: "{{ lookup('env', 'DB_NAME') }}"
