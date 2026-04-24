@@ -4,7 +4,7 @@
   hosts: [EC2, On-Premise]
   gather_facts: no
   become: no
-  remote_user: "{{ bootstrap_user | default('user1') }}"
+  remote_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
 
   roles:
     - dependency_setup
