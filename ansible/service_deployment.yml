@@ -33,7 +33,11 @@
       notify: restart_app
 
     - name: 3. 원격 브랜치 fetch (기존 레포)
-      command: git -C {{ app_dir }} fetch --quiet origin {{ deploy_branch }}
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: "{{ deploy_branch }}"
+        force: yes
       when: repo_stat.stat.exists
       changed_when: false
 
