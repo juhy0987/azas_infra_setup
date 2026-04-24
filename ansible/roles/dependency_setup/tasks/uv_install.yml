@@ -1,0 +1,36 @@
+---
+- name: "1. uv 설치 여부 확인"
+  stat:
+    path: "{{ uv_bin }}"
+  register: uv_stat
+
+- name: "2. 공식 설치 스크립트 다운로드"
+  get_url:
+    url: "{{ uv_install_url }}"
+    dest: "{{ uv_install_script_tmp }}"
+    mode: "0755"
+    force: yes
+  when: not uv_stat.stat.exists
+
+- name: "3. uv 설치 실행"
+  command: "{{ uv_install_script_tmp }}"
+  args:
+    creates: "{{ uv_bin }}"
+  environment:
+    UV_INSTALL_DIR: "{{ uv_install_dir }}"
+  when: not uv_stat.stat.exists
+
+- name: "4. 설치 스크립트 정리"
+  file:
+    path: "{{ uv_install_script_tmp }}"
+    state: absent
+  when: not uv_stat.stat.exists
+
+- name: "5. 버전 확인"
+  command: "{{ uv_bin }} --version"
+  register: uv_version
+  changed_when: false
+
+- name: "6. 결과 출력"
+  debug:
+    msg: "{{ inventory_hostname }}: {{ uv_version.stdout }}"

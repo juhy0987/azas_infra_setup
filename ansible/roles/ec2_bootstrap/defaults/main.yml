@@ -1,0 +1,33 @@
+---
+# EC2 Bootstrap Role Defaults
+
+# Remote connection user (override per host/group for non ec2-user AMIs, e.g. ubuntu)
+bootstrap_remote_user: ec2-user
+
+# User settings
+bootstrap_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
+bootstrap_user_shell: /bin/bash
+current_user: "{{ lookup('env', 'USER') }}"
+bootstrap_key_dir: "{{ lookup('env', 'HOME') }}/.ssh"
+bootstrap_private_key_file: "{{ inventory_hostname }}.pem"
+bootstrap_public_key_path: "{{ bootstrap_key_dir }}/{{ inventory_hostname }}.pem.pub"
+
+# OS family to admin group mapping
+bootstrap_admin_group_map:
+  RedHat: wheel
+  Debian: sudo
+bootstrap_admin_group_default: sudo
+
+# Sudoers configuration
+bootstrap_sudoers_file: /etc/sudoers.d/{{bootstrap_user}}
+bootstrap_sudoers_content: "{{bootstrap_user}}  ALL=(ALL)  NOPASSWD: ALL"
+bootstrap_sudoers_mode: "0440"
+
+# SSH config settings
+bootstrap_ssh_config_dir: "{{ lookup('env', 'HOME') }}/.ssh"
+bootstrap_ssh_config_file: "{{ bootstrap_ssh_config_dir }}/config"
+bootstrap_ssh_precheck_timeout: 20
+bootstrap_ssh_connect_timeout: 5
+
+# Authorized keys policy (set true to replace all keys with only the managed one)
+bootstrap_authorized_key_exclusive: no

@@ -1,0 +1,6 @@
+- name: PostgreSQL Role 실행
+  hosts: ansi2
+  become: yes
+
+  roles:
+    - postgresql_setup_ubuntu

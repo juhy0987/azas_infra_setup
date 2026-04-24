@@ -1,0 +1,22 @@
+---
+- name: 1. Git 패키지 설치
+  package:
+    name: git
+    state: present
+  become: yes
+  
+- name: 2. user.name 설정
+  git_config:
+    name: user.name
+    value: "juhyuni"
+    scope: global
+  become: yes
+  become_user: "{{ bootstrap_user | default('user1') }}"
+
+- name: 3. user.email 설정
+  git_config:
+    name: user.email
+    value: "juhy0987@naver.com"
+    scope: global
+  become: yes
+  become_user: "{{ bootstrap_user | default('user1') }}"

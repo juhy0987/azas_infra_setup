@@ -1,0 +1,9 @@
+---
+galaxy_info:
+  author: AZAS Team
+  description: Install runtime dependencies (uv, ...)
+  company: AZAS
+  license: license (BSD, MIT)
+  min_ansible_version: 2.9
+
+dependencies: []

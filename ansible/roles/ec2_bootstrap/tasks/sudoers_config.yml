@@ -1,0 +1,9 @@
+---
+# Sudoers NOPASSWD configuration task
+
+- name: "Configure {{ bootstrap_user }} NOPASSWD sudo access"
+  copy:
+    dest: "{{ bootstrap_sudoers_file }}"
+    content: "{{ bootstrap_sudoers_content }}"
+    mode: "{{ bootstrap_sudoers_mode }}"
+    validate: /usr/sbin/visudo -cf %s 

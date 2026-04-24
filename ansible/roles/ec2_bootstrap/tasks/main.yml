@@ -1,0 +1,42 @@
+---
+# EC2 Bootstrap Role - Main task file
+
+- name: "EC2 instance bootstrap configuration"
+  block:
+    - name: "Check if local PEM already exists for {{ inventory_hostname }}"
+      stat:
+        path: "{{ bootstrap_key_dir }}/{{ inventory_hostname }}.pem"
+      delegate_to: localhost
+      become: no
+      register: bootstrap_pem_stat
+
+    - name: "Check SSH login with bootstrap_user"
+      command: >
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no
+        -o ConnectTimeout={{ bootstrap_ssh_connect_timeout | default(5) }}
+        {% if bootstrap_pem_stat.stat.exists %}-i {{ bootstrap_key_dir }}/{{ inventory_hostname }}.pem{% endif %}
+        {{ bootstrap_user }}@{{ inventory_hostname }} true
+      delegate_to: localhost
+      become: no
+      register: bootstrap_user_ssh_check
+      changed_when: false
+      failed_when: false
+
+    - name: "Skip bootstrap when bootstrap_user SSH is already available"
+      meta: end_host
+      when: bootstrap_user_ssh_check.rc == 0
+
+    - name: "Gather facts from target (needed for admin group mapping)"
+      setup:
+
+    - name: "User account setup"
+      include_tasks: user_setup.yml
+
+    - name: "Sudoers configuration"
+      include_tasks: sudoers_config.yml
+
+    - name: "Prepare PEM-based SSH client config when SSH precheck failed"
+      include_tasks: ssh_client_config.yml
+
+    - name: "Inject management public key to bootstrap user"
+      include_tasks: ssh_key_setup.yml

@@ -1,0 +1,7 @@
+db_name: "{{ lookup('env', 'DB_NAME') }}"
+db_user: "{{ lookup('env', 'DB_USER') }}"
+db_pass: "{{ lookup('env', 'DB_PASS') }}"
+postgres_password: "{{ lookup('env', 'POSTGRES_PASSWORD') }}"
+pg_version: 16
+pg_conf_path: "/etc/postgresql/{{ pg_version }}/main/postgresql.conf"
+pg_hba_path: "/etc/postgresql/{{ pg_version }}/main/pg_hba.conf"

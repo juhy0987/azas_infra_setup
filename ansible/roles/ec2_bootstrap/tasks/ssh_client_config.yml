@@ -1,0 +1,50 @@
+---
+# Local SSH client PEM/config setup task
+
+- name: "Prepare PEM-based SSH client config for {{ inventory_hostname }}"
+  become: no
+  vars:
+    target_host: "{{ inventory_hostname }}"
+  block:
+    - name: "Ensure SSH client key directory exists"
+      file:
+        path: "{{ bootstrap_key_dir }}"
+        state: directory
+        mode: "0700"
+
+    - name: "Generate SSH key pair for {{ target_host }}"
+      command: ssh-keygen -q -N "" -f {{ target_host }}.pem
+      args:
+        chdir: "{{ bootstrap_key_dir }}"
+        creates: "{{ target_host }}.pem"
+
+    - name: "Set permissions for private key file"
+      file:
+        path: "{{ bootstrap_key_dir }}/{{ target_host }}.pem"
+        mode: "0600"
+
+    - name: "Set permissions for public key file"
+      file:
+        path: "{{ bootstrap_key_dir }}/{{ target_host }}.pem.pub"
+        mode: "0644"
+
+    - name: "Add SSH configuration for {{ target_host }}"
+      blockinfile:
+        path: "{{ bootstrap_ssh_config_file }}"
+        marker: "# {mark} Ansible Managed: {{ target_host }}"
+        block: |
+          Host {{ target_host }}
+            HostName {{ target_host }}
+            User {{ bootstrap_user }}
+            IdentityFile {{ bootstrap_key_dir }}/{{ target_host }}.pem
+            StrictHostKeyChecking no
+        create: yes
+        backup: yes
+    
+    - name: "Ensure SSH config file has correct permissions"
+      file:
+        path: "{{ bootstrap_ssh_config_file }}"
+        mode: "0600"
+
+  delegate_to: localhost
+  
