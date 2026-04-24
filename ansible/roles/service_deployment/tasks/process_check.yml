@@ -1,0 +1,41 @@
+---
+- name: "1. PID 파일 존재 여부 확인"
+  stat:
+    path: "{{ pid_file }}"
+  register: pid_stat
+
+- name: "2. PID 파일 읽기"
+  slurp:
+    src: "{{ pid_file }}"
+  register: pid_content
+  when: pid_stat.stat.exists
+
+- name: "3. PID 값 검증"
+  set_fact:
+    current_pid: >-
+      {{
+        (pid_content.content | b64decode | trim)
+        if (
+          pid_stat.stat.exists and
+          ((pid_content.content | b64decode | trim) | regex_search('^[0-9]+$'))
+        )
+        else ''
+      }}
+
+- name: "4. 프로세스 생존 확인"
+  command:
+    argv:
+      - kill
+      - -0
+      - "{{ current_pid }}"
+  register: proc_check
+  when:
+    - pid_stat.stat.exists
+    - current_pid | length > 0
+  changed_when: false
+  failed_when: false
+
+- name: "5. 배포 판단 변수 설정"
+  set_fact:
+    is_running: "{{ pid_stat.stat.exists and (current_pid | length > 0) and (proc_check.rc | default(1)) == 0 }}"
+    commits_match: "{{ current_commit.stdout == target_commit.stdout }}"

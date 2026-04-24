@@ -1,0 +1,20 @@
+---
+- name: "1. 재배포 불필요 - 스킵 안내"
+  debug:
+    msg: "프로세스(PID={{ current_pid }}) 정상 동작 + 커밋({{ current_commit.stdout[:7] }}) 일치 → 배포 스킵"
+  when: is_running and commits_match
+
+- name: "2. 목표 브랜치/커밋으로 체크아웃"
+  shell: |
+    git -C {{ app_dir }} reset --hard
+    git -C {{ app_dir }} checkout -B {{ deploy_branch }} origin/{{ deploy_branch }}
+  when: not commits_match
+  changed_when: true
+  notify: restart_app
+
+- name: "3. uv sync - 의존성 동기화"
+  command: uv sync
+  args:
+    chdir: "{{ app_dir }}"
+  when: not is_running or not commits_match
+  notify: restart_app

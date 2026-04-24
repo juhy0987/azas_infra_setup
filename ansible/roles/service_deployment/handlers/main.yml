@@ -1,0 +1,48 @@
+---
+- name: 기존 프로세스 종료
+  listen: restart_app
+  shell: |
+    if [ -f {{ pid_file }} ]; then
+      OLD_PID=$(cat {{ pid_file }})
+      if kill -0 $OLD_PID 2>/dev/null; then
+        kill $OLD_PID 2>/dev/null || true
+        for i in 1 2 3 4 5; do
+          kill -0 $OLD_PID 2>/dev/null || exit 0
+          sleep 1
+        done
+        kill -9 $OLD_PID 2>/dev/null || true
+      fi
+    fi
+
+- name: 서비스 기동
+  listen: restart_app
+  shell: |
+    nohup .venv/bin/uvicorn main:app \
+      --host {{ app_host }} --port {{ app_port }} \
+      > {{ log_file }} 2>&1 </dev/null &
+    echo $! > {{ pid_file }}
+  args:
+    chdir: "{{ app_dir }}"
+
+- name: 포트 헬스체크
+  listen: restart_app
+  wait_for:
+    host: 127.0.0.1
+    port: "{{ app_port }}"
+    delay: 2
+    timeout: 30
+
+- name: 신규 PID 확인
+  listen: restart_app
+  slurp:
+    src: "{{ pid_file }}"
+  register: new_pid_content
+
+- name: 배포 결과 요약
+  listen: restart_app
+  debug:
+    msg: |
+      배포 완료
+        브랜치: {{ deploy_branch }}
+        커밋:   {{ target_commit.stdout }}
+        PID:    {{ new_pid_content.content | b64decode | trim }}
