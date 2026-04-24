@@ -1,0 +1,97 @@
+---
+- name: "Postgresql Setup"
+  hosts: DB
+  become: yes
+
+  vars:
+    db_user: "{{ lookup('env', 'DB_USER') }}"
+    db_pass: "{{ lookup('env', 'DB_PASS') }}"
+    db_name: "{{ lookup('env', 'DB_NAME') }}"
+    pg_admin_pass: "{{ lookup('env', 'POSTGRES_ADMIN_PASSWORD') }}"
+    allowed_hosts: "{{ lookup('env', 'ALLOWED_HOSTS') | default('0.0.0.0/0') }}"
+    pg_data_dir: "/var/lib/pgsql/data"
+    pg_hba_path: "{{ pg_data_dir }}/pg_hba.conf"
+    pg_conf_path: "{{ pg_data_dir }}/postgresql.conf"
+
+  tasks:
+    - name: 0. 환경변수 검증
+      assert:
+        that:
+          - db_user | length > 0
+          - db_pass | length > 0
+          - db_name | length > 0
+          - pg_admin_pass | length > 0
+        fail_msg: "source .env 했는지 확인하세요!"
+        success_msg: " 환경변수 확인 완료"
+
+    - name: 1. 필수 패키지 설치
+      dnf:
+        name:
+          - postgresql16-server
+          - postgresql16-contrib
+          - python3-psycopg2
+        state: present
+
+    - name: 2. DB 초기화
+      command: postgresql-setup --initdb
+      args:
+        creates: "{{ pg_data_dir }}/PG_VERSION"
+
+    - name: 3. 외부 접속 허용 (listen_addresses)
+      lineinfile:
+        path: "{{ pg_conf_path }}"
+        regexp: "^#?listen_addresses"
+        line: "listen_addresses = '*'"
+        state: present
+      notify: restart_postgre
+
+    - name: 4. localhost md5 인증으로 변경
+      replace:
+        path: "{{ pg_hba_path }}"
+        regexp: '^(host\s+all\s+all\s+(127\.0\.0\.1\/32|::1\/128)\s+)(ident|scram-sha-256|trust|peer)$'
+        replace: '\1md5'
+      notify: restart_postgre
+
+    - name: 5. 외부 IP 대역 md5 접속 허용 룰 추가
+      lineinfile:
+        path: "{{ pg_hba_path }}"
+        regexp: '^host\s+all\s+all\s+0\.0\.0\.0/0'  
+        line: "host     all     all     {{ allowed_hosts }}     md5"
+        state: present
+      notify: restart_postgre
+
+    - name: 6. PostgreSQL 서비스 시작 및 자동 실행
+      systemd:
+        name: postgresql
+        state: started
+        enabled: yes
+
+    - name: 6-1. 핸들러 즉시 실행
+      meta: flush_handlers
+
+    - name: 7. 사용자 계정 생성 및 비밀번호 부여
+      postgresql_user:
+        name: "{{ db_user }}"
+        password: "{{ db_pass }}"
+        login_unix_socket: /var/run/postgresql
+      become_user: postgres
+
+    - name: 8. 신규 DB 생성 및 소유권 부여
+      postgresql_db:
+        name: "{{ db_name }}"
+        owner: "{{ db_user }}"
+        login_unix_socket: /var/run/postgresql
+      become_user: postgres
+
+    - name: 9. postgres 슈퍼유저 비밀번호 설정
+      postgresql_user:
+        name: postgres
+        password: "{{ pg_admin_pass }}"
+        login_unix_socket: /var/run/postgresql
+      become_user: postgres
+
+  handlers:
+    - name: restart_postgre
+      systemd:
+        name: postgresql
+        state: restarted
