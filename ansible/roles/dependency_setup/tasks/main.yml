@@ -1,0 +1,10 @@
+---
+# Dependency Setup Role - Main task file
+
+- name: "Runtime dependency setup"
+  block:
+    - name: "uv installation"
+      include_tasks: uv_install.yml
+    
+    - name: "git installation"
+      include_tasks: git_install.yml
