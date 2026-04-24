@@ -14,6 +14,10 @@
 
 - name: "3. uv 설치 실행"
   command: "{{ uv_install_script_tmp }}"
+  args:
+    creates: "{{ uv_bin }}"
+  environment:
+    UV_INSTALL_DIR: "{{ uv_install_dir }}"
   when: not uv_stat.stat.exists
   register: uv_install_result
   changed_when: uv_install_result.rc == 0
