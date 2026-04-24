@@ -1,0 +1,10 @@
+# ~/ansible/dependency_setup.yml
+---
+- name: "런타임 의존성 설치"
+  hosts: [EC2, On-Premise]
+  gather_facts: no
+  become: no
+  remote_user: "{{ bootstrap_user | default('user1') }}"
+
+  roles:
+    - dependency_setup

@@ -1,0 +1,10 @@
+---
+# Dependency Setup Role Defaults
+
+bootstrap_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
+
+# uv settings
+uv_install_dir: "/home/{{ bootstrap_user }}/.local/bin"
+uv_bin: "{{ uv_install_dir }}/uv"
+uv_install_url: "https://astral.sh/uv/install.sh"
+uv_install_script_tmp: /tmp/uv_install.sh
