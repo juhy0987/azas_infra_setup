@@ -18,7 +18,7 @@ jobs:
 
       - name: Validate commit messages
         run: |
-          pattern='^\[(FEAT|FIX|REFAC|DOCS|CHORE)\]'
+          pattern='^(\[(FEAT|FIX|REFAC|DOCS|CHORE)\]: .+|Merge pull request .+ from .+|Merge branch .+ into .+)'
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             base="${{ github.event.pull_request.base.sha }}"
