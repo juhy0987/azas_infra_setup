@@ -2,32 +2,104 @@
 - name: "Postgresql Setup"
   hosts: DB
   become: yes
-  
-  vars: 
-    postgresql_global_config_options:
-      - option: unix_socket_directories
-        value: '/var/run/postgresql'
-      - option: log_directory
-        value: "{{ 'log' if ansible_os_family == 'RedHat' else '/var/log/postgresql' }}"
-      - option: listen_addresses
-        value: "*"
 
-    postgresql_hba_entries:
-      - { type: local, database: all, user: postgres, address: '', auth_method: peer }
-      - { type: host,  database: all, user: all, address: '127.0.0.1/32', auth_method: md5 }
-      - { type: host,  database: all, user: all, address: '::1/128', auth_method: md5 }
-      - { type: host,  database: all, user: postgres, address: '0.0.0.0/0', auth_method: reject }
-      - { type: host,  database: all, user: all, address: '0.0.0.0/0', auth_method: md5 }
+  vars:
+    db_user: "{{ lookup('env', 'DB_USER') }}"
+    db_pass: "{{ lookup('env', 'DB_PASS') }}"
+    db_name: "{{ lookup('env', 'DB_NAME') }}"
+    pg_admin_pass: "{{ lookup('env', 'POSTGRES_ADMIN_PASSWORD') }}"
+    pg_data_dir: "/var/lib/pgsql/data"
+    pg_hba_path: "{{ pg_data_dir }}/pg_hba.conf"
+    pg_conf_path: "{{ pg_data_dir }}/postgresql.conf"
 
-    postgresql_users:
-      - name: "postgres"
-        password: "{{ lookup('env', 'POSTGRES_ADMIN_PASSWORD') }}"
-      - name: "{{ lookup('env', 'DB_USER') }}"
-        password: "{{ lookup('env', 'DB_PASS') }}"
+  tasks:
+    - name: 1. 필수 패키지 설치
+      dnf:
+        name:
+          - postgresql16-server
+          - postgresql16-contrib
+          - python3-psycopg2
+        state: present
 
-    postgresql_databases:
-      - name: "{{ lookup('env', 'DB_NAME') }}"
-        owner: "{{ lookup('env', 'DB_USER') }}"
+    - name: 2. DB 초기화
+      command: postgresql-setup --initdb
+      args:
+        creates: "{{ pg_data_dir }}/PG_VERSION"
 
-  roles:
-    - geerlingguy.postgresql 
+    - name: 3. 외부 접속 허용 (listen_addresses)
+      lineinfile:
+        path: "{{ pg_conf_path }}"
+        regexp: "^#?listen_addresses"
+        line: "listen_addresses = '*'"
+        state: present
+      notify: restart_postgre
+
+    - name: 4. localhost md5 인증으로 변경
+      replace:
+        path: "{{ pg_hba_path }}"
+        regexp: '^(host\s+all\s+all\s+(127\.0\.0\.1\/32|::1\/128)\s+)(ident|scram-sha-256|trust|peer)$'
+        replace: '\1md5'
+      notify: restart_postgre
+
+    - name: 5. 외부 IP 대역 md5 접속 허용 룰 추가
+      lineinfile:
+        path: "{{ pg_hba_path }}"
+        regexp: '^host\s+all\s+all\s+0\.0\.0\.0/0'
+        line: "host     all     all     0.0.0.0/0     md5"
+        state: present
+      notify: restart_postgre
+
+    
+    - name: 6. [임시] local 접속 trust로 변경
+      replace:
+        path: "{{ pg_hba_path }}"
+        regexp: '^(local\s+all\s+all\s+)(peer|md5|ident)$'
+        replace: '\1trust'
+      notify: restart_postgre
+
+    - name: 7. PostgreSQL 서비스 시작 및 자동 실행
+      systemd:
+        name: postgresql
+        state: started
+        enabled: yes
+
+    - name: 7-1. 핸들러 즉시 실행 (trust 적용 보장)
+      meta: flush_handlers
+
+    - name: 8. 사용자 계정 생성 및 비밀번호 부여
+      postgresql_user:
+        name: "{{ db_user }}"
+        password: "{{ db_pass }}"
+        login_unix_socket: /var/run/postgresql
+      become_user: postgres
+
+    - name: 9. 신규 DB 생성 및 소유권 부여
+      postgresql_db:
+        name: "{{ db_name }}"
+        owner: "{{ db_user }}"
+        login_unix_socket: /var/run/postgresql
+      become_user: postgres
+
+    - name: 10. postgres 슈퍼유저 비밀번호 설정
+      postgresql_user:
+        name: postgres
+        password: "{{ pg_admin_pass }}"
+        login_unix_socket: /var/run/postgresql
+      become_user: postgres
+
+   
+    - name: 11. [복구] local 접속 peer로 원복
+      replace:
+        path: "{{ pg_hba_path }}"
+        regexp: '^(local\s+all\s+all\s+)trust$'
+        replace: '\1peer'
+      notify: restart_postgre
+
+    - name: 11-1. 핸들러 즉시 실행 (peer 복구 적용)
+      meta: flush_handlers
+
+  handlers:
+    - name: restart_postgre
+      systemd:
+        name: postgresql
+        state: restarted
