@@ -2,7 +2,7 @@
 # Local SSH client PEM/config setup task
 
 - name: "Prepare PEM-based SSH client config for {{ inventory_hostname }}"
-  become: yes
+  become: no
   vars:
     target_host: "{{ inventory_hostname }}"
   block:
