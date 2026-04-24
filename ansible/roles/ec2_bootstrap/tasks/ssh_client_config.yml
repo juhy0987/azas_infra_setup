@@ -47,4 +47,4 @@
         mode: "0600"
 
   delegate_to: localhost
-  become: no
+  
