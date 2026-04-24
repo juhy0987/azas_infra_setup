@@ -8,7 +8,7 @@ bootstrap_remote_user: ec2-user
 bootstrap_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
 bootstrap_user_shell: /bin/bash
 current_user: "{{ lookup('env', 'USER') }}"
-bootstrap_key_dir: "/home/{{ current_user }}/.ssh"
+bootstrap_key_dir: "{{ lookup('env', 'HOME') }}/.ssh"
 bootstrap_private_key_file: "{{ inventory_hostname }}.pem"
 bootstrap_public_key_path: "{{ bootstrap_key_dir }}/{{ inventory_hostname }}.pem.pub"
 
