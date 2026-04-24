@@ -8,8 +8,4 @@
     key: "{{ lookup('file', bootstrap_key_dir ~ '/' ~ inventory_hostname ~ '.pem.pub') }}"
     exclusive: "{{ bootstrap_authorized_key_exclusive | bool }}"
   
-- name: "Clear public key files after key injection for {{ inventory_hostname }}"
-  file:
-    path: "{{ bootstrap_key_dir }}/{{ inventory_hostname }}.pem.pub"
-    state: absent
 
