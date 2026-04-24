@@ -10,7 +10,7 @@
     - deploy_vars.yml
 
   vars:
-    bootstrap_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
+    bootstrap_user: "{{ lookup('env', 'BOOTSTRAP_USER') }}"
     repo_url: "https://github.com/juhy0987/azas_application_server"
     app_dir: "/home/{{ bootstrap_user }}/azas_application_server"
     pid_file: "{{ app_dir }}/.app.pid"
