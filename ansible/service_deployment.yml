@@ -1,0 +1,142 @@
+# service_deploy
+---
+- name: Service 정상 배포 및 확인
+  hosts: [EC2, On-Premise]
+  gather_facts: no
+  become: no
+  remote_user: "{{ bootstrap_user }}"
+
+  vars_files:
+    - deploy_vars.yml
+
+  vars:
+    bootstrap_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
+    repo_url: "https://github.com/juhy0987/azas_application_server"
+    app_dir: "/home/{{ bootstrap_user }}/azas_application_server"
+    pid_file: "{{ app_dir }}/.app.pid"
+    log_file: "{{ app_dir }}/app.log"
+    app_host: "0.0.0.0"
+    app_port: 8000
+
+  tasks:
+    - name: 1. 앱 레포 존재 여부 확인
+      stat:
+        path: "{{ app_dir }}/.git"
+      register: repo_stat
+
+    - name: 2. 최초 배포 - 레포 clone
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: "{{ deploy_branch }}"
+      when: not repo_stat.stat.exists
+      notify: restart_app
+
+    - name: 3. 원격 브랜치 fetch (기존 레포)
+      command: git -C {{ app_dir }} fetch --quiet origin {{ deploy_branch }}
+      when: repo_stat.stat.exists
+      changed_when: false
+
+    - name: 4. 현재 HEAD 커밋 조회
+      command: git -C {{ app_dir }} rev-parse HEAD
+      register: current_commit
+      changed_when: false
+
+    - name: 5. 목표 커밋 조회
+      command: git -C {{ app_dir }} rev-parse origin/{{ deploy_branch }}
+      register: target_commit
+      changed_when: false
+
+    - name: 6. PID 파일 존재 여부 확인
+      stat:
+        path: "{{ pid_file }}"
+      register: pid_stat
+
+    - name: 7. PID 파일 읽기
+      slurp:
+        src: "{{ pid_file }}"
+      register: pid_content
+      when: pid_stat.stat.exists
+
+    - name: 8. 프로세스 생존 확인
+      shell: "kill -0 {{ pid_value }} 2>/dev/null && echo alive || echo dead"
+      vars:
+        pid_value: "{{ (pid_content.content | b64decode | trim) if pid_stat.stat.exists else '' }}"
+      register: proc_check
+      when: pid_stat.stat.exists
+      changed_when: false
+
+    - name: 9. 배포 판단 변수 설정
+      set_fact:
+        current_pid: "{{ (pid_content.content | b64decode | trim) if pid_stat.stat.exists else '' }}"
+        is_running: "{{ pid_stat.stat.exists and (proc_check.stdout | default('dead')) == 'alive' }}"
+        commits_match: "{{ current_commit.stdout == target_commit.stdout }}"
+
+    - name: 10. 재배포 불필요 - 스킵 안내
+      debug:
+        msg: "프로세스(PID={{ current_pid }}) 정상 동작 + 커밋({{ current_commit.stdout[:7] }}) 일치 → 배포 스킵"
+      when: is_running and commits_match
+
+    - name: 11. 목표 브랜치/커밋으로 체크아웃
+      shell: |
+        git -C {{ app_dir }} reset --hard
+        git -C {{ app_dir }} checkout -B {{ deploy_branch }} origin/{{ deploy_branch }}
+      when: not commits_match
+      changed_when: true
+      notify: restart_app
+
+    - name: 12. uv sync - 의존성 동기화
+      command: uv sync
+      args:
+        chdir: "{{ app_dir }}"
+      when: not is_running or not commits_match
+      notify: restart_app
+
+  handlers:
+    - name: 기존 프로세스 종료
+      listen: restart_app
+      shell: |
+        if [ -f {{ pid_file }} ]; then
+          OLD_PID=$(cat {{ pid_file }})
+          if kill -0 $OLD_PID 2>/dev/null; then
+            kill $OLD_PID 2>/dev/null || true
+            for i in 1 2 3 4 5; do
+              kill -0 $OLD_PID 2>/dev/null || exit 0
+              sleep 1
+            done
+            kill -9 $OLD_PID 2>/dev/null || true
+          fi
+        fi
+
+    - name: 서비스 기동
+      listen: restart_app
+      shell: |
+        nohup .venv/bin/uvicorn main:app \
+          --host {{ app_host }} --port {{ app_port }} \
+          > {{ log_file }} 2>&1 </dev/null &
+        echo $! > {{ pid_file }}
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: 포트 헬스체크
+      listen: restart_app
+      wait_for:
+        host: 127.0.0.1
+        port: "{{ app_port }}"
+        delay: 2
+        timeout: 30
+
+    - name: 신규 PID 확인
+      listen: restart_app
+      slurp:
+        src: "{{ pid_file }}"
+      register: new_pid_content
+
+    - name: 배포 결과 요약
+      listen: restart_app
+      debug:
+        msg: |
+          배포 완료
+            브랜치: {{ deploy_branch }}
+            커밋:   {{ target_commit.stdout }}
+            PID:    {{ new_pid_content.content | b64decode | trim }}
