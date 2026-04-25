@@ -1,0 +1,55 @@
+---
+# Monitoring Setup Role Defaults
+# 이 role 은 모니터링 서버(Local) 에 prometheus + grafana 를 설치합니다.
+# node_exporter 는 별도의 node_exporter_setup role 로 분리되어 있습니다.
+
+# 어떤 컴포넌트를 설치할지 — playbook 의 각 play 에서 오버라이드 가능
+monitoring_components:
+  - prometheus
+  - grafana
+
+# Node Exporter scrape port
+# (node_exporter_setup role 의 systemd unit 이 9100 으로 listen 하는 것과 일치해야 함)
+node_exporter_port: 9100
+
+# Prometheus (collection 활용)
+fixed_prometheus_version: "2.47.0"
+fixed_prometheus_targets:
+  on_premise:
+    - targets: "{{ groups['On-Premise'] | default([]) | map('regex_replace', '$', ':' ~ node_exporter_port | string) | list }}"
+      labels:
+        env: lab
+        tier: on-premise
+  ec2:
+    - targets: "{{ groups['EC2'] | default([]) | map('regex_replace', '$', ':' ~ node_exporter_port | string) | list }}"
+      labels:
+        env: lab
+        tier: ec2
+  db:
+    - targets: "{{ groups['DB'] | default([]) | map('regex_replace', '$', ':' ~ node_exporter_port | string) | list }}"
+      labels:
+        env: lab
+        tier: db
+  local:
+    - targets:
+        - "127.0.0.1:{{ node_exporter_port }}"
+      labels:
+        env: lab
+        tier: local
+fixed_prometheus_scrape_configs:
+  - job_name: on_premise
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/on_premise.yml
+  - job_name: ec2
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/ec2.yml
+  - job_name: db
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/db.yml
+  - job_name: local
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/local.yml

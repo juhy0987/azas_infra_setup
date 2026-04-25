@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: AZAS Team
+  description: Install monitoring stack (node_exporter, prometheus, grafana)
+  company: AZAS
+  license: license (BSD, MIT)
+  min_ansible_version: 2.9
+
+dependencies: []
+
+# 외부 collection 의존성
+# (별도 requirements.yml 로 관리해도 무방하지만 참고용으로 명시)
+collections:
+  - prometheus.prometheus

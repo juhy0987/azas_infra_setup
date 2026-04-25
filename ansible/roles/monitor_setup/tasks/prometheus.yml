@@ -1,0 +1,12 @@
+---
+# prometheus.prometheus.prometheus 컬렉션을 활용해 OS 비종속적으로 설치합니다.
+# 컬렉션이 없으면 사전에 다음 명령으로 설치하세요:
+#   ansible-galaxy collection install prometheus.prometheus
+
+- name: "1. Prometheus 설치 및 설정 (collection 활용)"
+  include_role:
+    name: prometheus.prometheus.prometheus
+  vars:
+    prometheus_version: "{{ fixed_prometheus_version }}"
+    prometheus_targets: "{{ fixed_prometheus_targets }}"
+    prometheus_scrape_configs: "{{ fixed_prometheus_scrape_configs }}"

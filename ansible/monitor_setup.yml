@@ -1,0 +1,8 @@
+---
+- name: "모니터링 도구 설치 및 설정"
+  hosts: localhost
+  connection: local
+  become: yes
+
+  roles:
+    - monitor_setup
