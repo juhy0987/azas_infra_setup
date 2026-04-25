@@ -1,0 +1,5 @@
+---
+node_exporter_pkgs_required:
+  - unzip
+  - tar
+  - python3-apt

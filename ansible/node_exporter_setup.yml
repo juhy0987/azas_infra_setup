@@ -1,0 +1,8 @@
+# ~/ansible/node_exporter_setup.yml
+---
+- name: "Node Exporter 설치 (전 호스트)"
+  hosts: all
+  become: yes
+
+  roles:
+    - node_exporter_setup

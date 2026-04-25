@@ -1,0 +1,4 @@
+---
+node_exporter_pkgs_required:
+  - tar
+  - gzip
