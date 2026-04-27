@@ -1,0 +1,62 @@
+{
+  "version": 4,
+  "terraform_version": "1.14.9",
+  "serial": 13,
+  "lineage": "5f91fc35-dbae-bcc3-6ee6-b6d217d7cfb9",
+  "outputs": {
+    "route53_nameservers": {
+      "value": [
+        "ns-1012.awsdns-62.net",
+        "ns-1308.awsdns-35.org",
+        "ns-1730.awsdns-24.co.uk",
+        "ns-473.awsdns-59.com"
+      ],
+      "type": [
+        "list",
+        "string"
+      ]
+    }
+  },
+  "resources": [
+    {
+      "mode": "managed",
+      "type": "aws_route53_zone",
+      "name": "main",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:route53:::hostedzone/Z0149926LCHH2YA3HY03",
+            "comment": "Managed by Terraform",
+            "delegation_set_id": "",
+            "enable_accelerated_recovery": false,
+            "force_destroy": false,
+            "id": "Z0149926LCHH2YA3HY03",
+            "name": "cloudyim.store",
+            "name_servers": [
+              "ns-1012.awsdns-62.net",
+              "ns-1308.awsdns-35.org",
+              "ns-1730.awsdns-24.co.uk",
+              "ns-473.awsdns-59.com"
+            ],
+            "primary_name_server": "ns-1308.awsdns-35.org",
+            "tags": null,
+            "tags_all": {},
+            "timeouts": null,
+            "vpc": [],
+            "zone_id": "Z0149926LCHH2YA3HY03"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "account_id": "336925002301",
+            "zone_id": "Z0149926LCHH2YA3HY03"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInVwZGF0ZSI6MTgwMDAwMDAwMDAwMH19"
+        }
+      ]
+    }
+  ],
+  "check_results": null
+}
