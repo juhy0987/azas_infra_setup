@@ -1,43 +1,43 @@
 ---
 - name: "1. Node Exporter 서비스 중지"
-  ansible.builtin.systemd:
+  systemd:
     name: node_exporter
     state: stopped
     enabled: no
   failed_when: false
 
 - name: "2. Node Exporter systemd unit 삭제"
-  ansible.builtin.file:
+  file:
     path: /etc/systemd/system/node_exporter.service
     state: absent
 
 - name: "3. Node Exporter 실행 파일 삭제"
-  ansible.builtin.file:
+  file:
     path: "{{ node_exporter_binary_path }}"
     state: absent
 
 - name: "4. Node Exporter 압축 해제 디렉토리 삭제"
-  ansible.builtin.file:
+  file:
     path: "/tmp/{{ node_exporter_archive_name }}"
     state: absent
 
 - name: "5. Node Exporter 압축파일 삭제"
-  ansible.builtin.file:
+  file:
     path: "{{ node_exporter_archive_path }}"
     state: absent
 
 - name: "6. Node Exporter 시스템 사용자 제거"
-  ansible.builtin.user:
+  user:
     name: "{{ node_exporter_user }}"
     state: absent
   failed_when: false
 
 - name: "7. Node Exporter 그룹 제거"
-  ansible.builtin.group:
+  group:
     name: "{{ node_exporter_group }}"
     state: absent
   failed_when: false
 
 - name: "8. systemd 데몬 리로드"
-  ansible.builtin.systemd:
+  systemd:
     daemon_reload: yes
