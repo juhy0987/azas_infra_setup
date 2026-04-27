@@ -20,4 +20,4 @@ provider "cloudflare" {
 # 1. provider 설정
 provider "aws" {
     region = "ap-northeast-2" # 서울
-}
+} 

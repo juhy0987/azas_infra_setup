@@ -26,5 +26,5 @@ variable "onprem_public_ip" {
 # 도메인 네임
 variable "domain_name" {
   description = "본인이 소유한 도메인 이름"
-  type        = string
+  type        = string 
 }

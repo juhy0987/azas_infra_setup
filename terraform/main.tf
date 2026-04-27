@@ -13,4 +13,4 @@ data "aws_ami" "al2023" {
     name   = "architecture"
     values = ["x86_64"]
   }
-}
+}  

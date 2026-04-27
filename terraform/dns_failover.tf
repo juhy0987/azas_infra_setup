@@ -68,4 +68,4 @@ resource "aws_route53_record" "aws_secondary" {
     zone_id                = aws_lb.main_alb.zone_id
     evaluate_target_health = true
   }
-}
+} 

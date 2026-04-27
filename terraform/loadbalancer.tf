@@ -103,4 +103,4 @@ resource "aws_lb_target_group_attachment" "aws_target" {
   target_group_arn = aws_lb_target_group.aws_tg.arn
   target_id        = aws_instance.app_server.id
   port             = 80
-}
+} 

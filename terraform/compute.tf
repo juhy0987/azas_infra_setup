@@ -30,3 +30,4 @@ resource "local_file" "ssh_key" {
     file_permission = "0600" # 파일 권한 설정
 }
 
+

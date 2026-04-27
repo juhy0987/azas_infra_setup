@@ -42,4 +42,4 @@ output "route53_health_check_id" {
 output "ec2_availability_zone" {
   value       = aws_instance.app_server.availability_zone
   description = "EC2 Availability Zone"
-}
+} 
