@@ -1,0 +1,7 @@
+---
+# Node Exporter Remove Role - Main task file
+
+- name: "Node Exporter removal"
+  block:
+    - name: "Node Exporter 제거"
+      include_tasks: remove.yml

@@ -1,0 +1,3 @@
+---
+# Role-level vars intentionally empty.
+# OS-specific values live in vars/{{ ansible_os_family }}.yml.

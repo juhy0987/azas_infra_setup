@@ -1,0 +1,8 @@
+# ~/ansible/node_exporter_remove.yml
+---
+- name: "Node Exporter 제거 (전 호스트)"
+  hosts: all
+  become: yes
+
+  roles:
+    - node_exporter_remove

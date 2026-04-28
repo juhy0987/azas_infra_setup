@@ -1,0 +1,65 @@
+---
+- name: "1. 필수 라이브러리 설치"
+  package:
+    name: "{{ node_exporter_pkgs_required }}"
+    state: present
+
+- name: "2. Node Exporter 전용 그룹 생성"
+  group:
+    name: "{{ node_exporter_group }}"
+    system: yes
+    state: present
+
+- name: "3. Node Exporter 전용 시스템 사용자 생성"
+  user:
+    name: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+    system: yes
+    shell: /usr/sbin/nologin
+    create_home: no
+    state: present
+
+- name: "4. Node Exporter 패키지 다운로드"
+  get_url:
+    url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/{{ node_exporter_archive_name }}.tar.gz"
+    dest: "{{ node_exporter_archive_path }}"
+
+- name: "5. 압축 풀기"
+  unarchive:
+    src: "{{ node_exporter_archive_path }}"
+    dest: /tmp
+    remote_src: yes
+    creates: "/tmp/{{ node_exporter_archive_name }}/node_exporter"
+
+- name: "6. 실행 파일 이동 및 권한 설정"
+  copy:
+    src: "/tmp/{{ node_exporter_archive_name }}/node_exporter"
+    dest: "{{ node_exporter_binary_path }}"
+    mode: "0755"
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+    remote_src: yes
+
+- name: "7. Node Exporter systemd unit 등록"
+  copy:
+    dest: /etc/systemd/system/node_exporter.service
+    content: |
+      [Unit]
+      Description=Node Exporter
+      After=network.target
+
+      [Service]
+      User={{ node_exporter_user }}
+      Group={{ node_exporter_group }}
+      ExecStart={{ node_exporter_binary_path }}
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: "8. 서비스 시작 및 활성화"
+  systemd:
+    name: node_exporter
+    state: restarted
+    enabled: yes
+    daemon_reload: yes

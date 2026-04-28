@@ -1,0 +1,18 @@
+---
+# RedHat (Rocky/RHEL/Amazon Linux) family vars
+
+grafana_pkgs_required:
+  - wget
+  - gnupg2
+
+grafana_repo_path: /etc/yum.repos.d/grafana.repo
+grafana_repo_content: |
+  [grafana]
+  name=grafana
+  baseurl=https://rpm.grafana.com
+  repo_gpgcheck=1
+  enabled=1
+  gpgcheck=1
+  gpgkey=https://rpm.grafana.com/gpg.key
+  sslverify=1
+  sslcacert=/etc/pki/tls/certs/ca-bundle.crt

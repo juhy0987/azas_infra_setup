@@ -1,0 +1,22 @@
+---
+# Monitoring Remove Role Defaults
+# 이 role 은 모니터링 서버(Local) 의 prometheus + grafana 를 제거합니다.
+# node_exporter 는 별도의 node_exporter_remove role 로 분리되어 있습니다.
+
+monitoring_components:
+  - prometheus
+  - grafana
+
+# Prometheus 설치 위치 (collection 기반 설치 기준)
+prometheus_paths:
+  - /usr/local/bin/prometheus
+  - /usr/local/bin/promtool
+  - /etc/prometheus
+  - /var/lib/prometheus
+  - /etc/systemd/system/prometheus.service
+
+# Grafana 패키지 정리 시 제거할 저장소 정의
+grafana_repo_path_redhat: /etc/yum.repos.d/grafana.repo
+grafana_apt_repo: "deb https://packages.grafana.com/oss/deb stable main"
+grafana_apt_repo_filename: grafana
+grafana_apt_key_url: https://packages.grafana.com/gpg.key

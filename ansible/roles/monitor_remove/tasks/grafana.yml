@@ -1,0 +1,41 @@
+---
+- name: "1. Grafana 서비스 중지 및 비활성화"
+  systemd:
+    name: grafana-server
+    state: stopped
+    enabled: no
+  failed_when: false
+
+# --- RedHat 계열 ---
+- name: "2. Grafana 패키지 제거 (RedHat)"
+  dnf:
+    name: grafana
+    state: absent
+  when: ansible_os_family == "RedHat"
+
+- name: "3. Grafana YUM 저장소 제거 (RedHat)"
+  file:
+    path: "{{ grafana_repo_path_redhat }}"
+    state: absent
+  when: ansible_os_family == "RedHat"
+
+# --- Debian 계열 ---
+- name: "4. Grafana 패키지 제거 (Debian)"
+  apt:
+    name: grafana
+    state: absent
+    purge: yes
+  when: ansible_os_family == "Debian"
+
+- name: "5. Grafana APT 저장소 제거 (Debian)"
+  apt_repository:
+    repo: "{{ grafana_apt_repo }}"
+    state: absent
+    filename: "{{ grafana_apt_repo_filename }}"
+  when: ansible_os_family == "Debian"
+
+- name: "6. Grafana GPG 키 제거 (Debian)"
+  apt_key:
+    url: "{{ grafana_apt_key_url }}"
+    state: absent
+  when: ansible_os_family == "Debian"

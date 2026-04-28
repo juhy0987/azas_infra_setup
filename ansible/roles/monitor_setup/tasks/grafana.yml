@@ -1,0 +1,46 @@
+---
+- name: "1. Grafana 의존성 패키지 설치"
+  package:
+    name: "{{ grafana_pkgs_required }}"
+    state: present
+
+# --- RedHat 계열 ---
+- name: "2. Grafana YUM 저장소 등록 (RedHat)"
+  copy:
+    dest: "{{ grafana_repo_path }}"
+    content: "{{ grafana_repo_content }}"
+  when: ansible_os_family == "RedHat"
+
+- name: "3. Grafana 설치 (RedHat)"
+  dnf:
+    name: grafana
+    state: present
+  when: ansible_os_family == "RedHat"
+
+# --- Debian 계열 ---
+- name: "4. Grafana GPG 키 등록 (Debian)"
+  apt_key:
+    url: "{{ grafana_apt_key_url }}"
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: "5. Grafana APT 저장소 등록 (Debian)"
+  apt_repository:
+    repo: "{{ grafana_apt_repo }}"
+    state: present
+    filename: "{{ grafana_apt_repo_filename }}"
+  when: ansible_os_family == "Debian"
+
+- name: "6. Grafana 설치 (Debian)"
+  apt:
+    name: grafana
+    state: present
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+
+# --- 공통 ---
+- name: "7. Grafana 서비스 시작 및 자동실행"
+  systemd:
+    name: grafana-server
+    state: started
+    enabled: yes

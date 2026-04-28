@@ -1,0 +1,21 @@
+---
+# Monitoring Setup Role - Main task file
+# 컴포넌트는 monitoring_components 변수로 제어합니다.
+
+- name: "Monitoring stack setup"
+  block:
+    - name: "OS family fact 수집"
+      setup:
+        gather_subset: min
+      when: ansible_facts.os_family is not defined
+
+    - name: "OS-specific 변수 로드"
+      include_vars: "{{ ansible_os_family }}.yml"
+
+    - name: "Prometheus 설치"
+      include_tasks: prometheus.yml
+      when: "'prometheus' in monitoring_components"
+
+    - name: "Grafana 설치"
+      include_tasks: grafana.yml
+      when: "'grafana' in monitoring_components"

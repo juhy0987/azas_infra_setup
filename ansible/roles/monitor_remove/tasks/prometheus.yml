@@ -1,0 +1,17 @@
+---
+- name: "1. Prometheus 서비스 중지"
+  systemd:
+    name: prometheus
+    state: stopped
+    enabled: no
+  failed_when: false
+
+- name: "2. Prometheus 관련 경로 삭제"
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ prometheus_paths }}"
+
+- name: "3. systemd 데몬 리로드"
+  systemd:
+    daemon_reload: yes
