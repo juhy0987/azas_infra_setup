@@ -1,0 +1,19 @@
+---
+- name: Stop ab processes on Management Server
+  shell: pkill ab || true
+  delegate_to: localhost
+  run_once: true
+  when: action in ["start", "stop"]
+  ignore_errors: yes
+
+- name: Start HTTP Traffic from MGMT to Targets
+  shell: |
+    nohup ab \
+      -c {{ concurrency }} \
+      -t {{ duration }} \
+      http://{{ ansible_host | default(inventory_hostname) }}:{{ target_port }}{{ target_path }} \
+      > /tmp/ab_{{ inventory_hostname }}.log 2>&1 &
+  delegate_to: localhost
+  when: action == "start"
+  async: "{{ async_timeout }}"
+  poll: "{{ async_poll }}"

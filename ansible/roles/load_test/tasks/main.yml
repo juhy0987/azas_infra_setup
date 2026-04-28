@@ -1,0 +1,8 @@
+---
+- name: Load Test
+  block:
+    - name: Stress CPU and Memory
+      include_tasks: stress_load.yml
+    
+    - name: Apply Network Traffic Load
+      include_tasks: traffic.yml
