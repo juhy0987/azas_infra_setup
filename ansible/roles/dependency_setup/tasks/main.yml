@@ -8,3 +8,6 @@
     
     - name: "git installation"
       include_tasks: git_install.yml
+
+    - name: "stress tools installation"
+      include_tasks: stress_tools_install.yml

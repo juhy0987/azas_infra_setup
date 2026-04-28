@@ -1,0 +1,25 @@
+---
+- name: "1. RedHat 계열 EPEL 레포지토리 설치"
+  dnf:
+    name: epel-release
+    state: present
+  when: ansible_os_family == "RedHat"
+  become: yes
+
+- name: "2. RedHat 계열 메타데이터 캐시 업데이트"
+  dnf:
+    update_cache: yes
+  when: ansible_os_family == "RedHat"
+  become: yes
+
+- name: "3. stress-ng 패키지 설치"
+  package:
+    name: stress-ng
+    state: present
+  become: yes
+
+- name: "4. Apache Benchmark(ab) 도구 설치"
+  package:
+    name: "{{ 'apache2-utils' if ansible_os_family == 'Debian' else 'httpd-tools' }}"
+    state: present
+  become: yes
