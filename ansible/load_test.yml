@@ -1,0 +1,98 @@
+---
+- name: CPU/RAM Load on Target Servers
+  hosts: On-Premise
+  become: yes
+  gather_facts: yes
+
+  vars:
+    action: start
+    duration: 180
+    cpu_workers: 4
+    memory_workers: 2
+    memory_bytes: "512M"
+
+  tasks:
+    - name: Install EPEL on RedHat Targets
+      dnf:
+        name: epel-release
+        state: present
+      when:
+        - action == "start"
+        - ansible_os_family == "RedHat"
+
+    - name: Update Metadata cache for RedHat (Rocky/RHEL)
+      dnf:
+        update_cache: yes
+      when:
+        - action == "start"
+        - ansible_os_family == "RedHat"
+
+    - name: Install stress-ng on Targets
+      package:
+        name: stress-ng
+        state: present
+      when: action == "start"
+
+    - name: Stop stress-ng on Targets
+      shell: pkill stress-ng || true
+      when: action in ["start", "stop"]
+      ignore_errors: yes
+
+    - name: Start CPU/Memory load on Targets
+      shell: |
+        nohup setsid stress-ng \
+          --cpu {{ cpu_workers }} \
+          --vm {{ memory_workers }} \
+          --vm-bytes {{ memory_bytes }} \
+          --timeout {{ duration }} \
+          > /tmp/stress.log 2>&1 &
+      when: action == "start"
+      async: 10
+      poll: 0
+
+
+- name: HTTP Traffic from Management Server
+  hosts: localhost
+  connection: local
+  become: yes
+  gather_facts: yes
+
+  vars:
+    action: start
+    concurrency: 500
+    duration: 180
+    target_port: 80
+    target_path: "/"
+
+  tasks:
+    - name: Install ab tool on Management Server
+      package:
+        name: "{{ 'apache2-utils' if ansible_os_family == 'Debian' else 'httpd-tools' }}"
+        state: present
+      when: action == "start"
+
+    - name: Stop ab processes on Management Server
+      shell: pkill ab || true
+      when: action in ["start", "stop"]
+      ignore_errors: yes
+
+    - name: Start HTTP Traffic from MGMT to Targets
+      shell: |
+        {% for host in groups['all'] %}
+        nohup ab \
+          -c {{ concurrency }} \
+          -t {{ duration }} \
+          http://{{ hostvars[host]['ansible_host'] | default(host) }}:{{ target_port }}{{ target_path }} \
+          > /tmp/ab_{{ host }}.log 2>&1 &
+        {% endfor %}
+      when: action == "start"
+      async: 200
+      poll: 0
+
+    - name: Check ab status on Management Server
+      shell: ps -ef | grep ab | grep -v grep || true
+      register: ab_status
+
+    - name: Show ab status
+      debug:
+        var: ab_status.stdout_lines
