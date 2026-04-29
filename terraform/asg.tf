@@ -1,6 +1,6 @@
 # 0. Launch Template
 resource "aws_launch_template" "project_lt" {
-  name          = "azas-launch-template"
+  name_prefix          = "azas-launch-template"
   image_id      = data.aws_ami.al2023.id
   instance_type = "t3.micro"
 
@@ -29,12 +29,15 @@ resource "aws_sns_topic_subscription" "email_subs" {
 
 # 3. 오토 스케일링 그룹 (ASG)
 resource "aws_autoscaling_group" "project_asg" {
-  name             = "my-project-asg"
+  name_prefix      = "my-project-asg"
   desired_capacity = 1
   max_size         = 4
   min_size         = 1
 
-  vpc_zone_identifier = [aws_subnet.private_subnet_a.id]
+  vpc_zone_identifier = [
+    aws_subnet.private_subnet_a.id
+    #aws_subnet.private_subnet_c.id                    
+  ]
 
   launch_template {
     id      = aws_launch_template.project_lt.id
