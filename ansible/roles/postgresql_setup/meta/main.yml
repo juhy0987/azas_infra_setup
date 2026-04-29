@@ -1,6 +1,6 @@
 galaxy_info:
   author: yhs
-  description: PostgreSQL install (Rocky 용)
+  description: PostgreSQL install (Rocky / Ubuntu 공용)
   license: MIT
   min_ansible_version: 2.9
 

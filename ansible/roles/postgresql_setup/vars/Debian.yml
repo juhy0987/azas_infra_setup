@@ -1,0 +1,11 @@
+postgres_packages:
+  - postgresql
+  - postgresql-contrib
+  - python3-psycopg2
+  - acl
+
+pg_data_dir: "/var/lib/postgresql"
+pg_hba_path: "/etc/postgresql/{{ pg_version }}/main/pg_hba.conf"
+pg_conf_path: "/etc/postgresql/{{ pg_version }}/main/postgresql.conf"
+
+postgres_init: false
