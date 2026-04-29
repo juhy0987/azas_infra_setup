@@ -1,0 +1,17 @@
+---
+- name: Stop stress-ng on Targets
+  shell: pkill stress-ng || true
+  when: action in ["start", "stop"]
+  ignore_errors: yes
+
+- name: Start CPU/Memory load on Targets
+  shell: |
+    nohup setsid stress-ng \
+      --cpu {{ cpu_workers }} \
+      --vm {{ memory_workers }} \
+      --vm-bytes {{ memory_bytes }} \
+      --timeout {{ duration }} \
+      > /tmp/stress.log 2>&1 &
+  when: action == "start"
+  async: "{{ async_timeout }}"
+  poll: "{{ async_poll }}"

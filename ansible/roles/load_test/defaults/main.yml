@@ -1,0 +1,14 @@
+---
+action: start
+duration: 180
+
+cpu_workers: 4
+memory_workers: 2
+memory_bytes: "512M"
+
+concurrency: 500
+target_port: 80
+target_path: "/"
+
+async_timeout: "{{ duration | int + 60 }}"
+async_poll: 0

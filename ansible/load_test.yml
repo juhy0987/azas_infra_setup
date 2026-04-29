@@ -1,0 +1,8 @@
+---
+- name: 부하 테스트 실행
+  hosts: On-Premise
+  become: yes
+  gather_facts: no
+
+  roles:
+    - load_test
