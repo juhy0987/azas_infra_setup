@@ -1,0 +1,32 @@
+---
+- name: "1. 앱 레포 존재 여부 확인"
+  stat:
+    path: "{{ app_dir }}/.git"
+  register: repo_stat
+
+- name: "2. 최초 배포 - 레포 clone"
+  git:
+    repo: "{{ repo_url }}"
+    dest: "{{ app_dir }}"
+    version: "{{ deploy_branch }}"
+  when: not repo_stat.stat.exists
+  notify: restart_app
+
+- name: "3. 원격 브랜치 fetch (기존 레포)"
+  git:
+    repo: "{{ repo_url }}"
+    dest: "{{ app_dir }}"
+    version: "{{ deploy_branch }}"
+    force: yes
+  when: repo_stat.stat.exists
+  changed_when: false
+
+- name: "4. 현재 HEAD 커밋 조회"
+  command: git -C {{ app_dir }} rev-parse HEAD
+  register: current_commit
+  changed_when: false
+
+- name: "5. 목표 커밋 조회"
+  command: git -C {{ app_dir }} rev-parse origin/{{ deploy_branch }}
+  register: target_commit
+  changed_when: false

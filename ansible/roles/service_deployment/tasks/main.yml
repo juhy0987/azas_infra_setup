@@ -1,0 +1,13 @@
+---
+# Service Deployment Role - Main task file
+
+- name: "Service deployment"
+  block:
+    - name: "Repository sync"
+      include_tasks: repo_sync.yml
+
+    - name: "Process state check"
+      include_tasks: process_check.yml
+
+    - name: "Deploy"
+      include_tasks: deploy.yml

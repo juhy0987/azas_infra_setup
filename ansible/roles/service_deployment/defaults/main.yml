@@ -1,0 +1,19 @@
+---
+# Service Deployment Role Defaults
+
+bootstrap_user: "{{ lookup('env', 'BOOTSTRAP_USER') }}"
+
+# Repository
+repo_url: "https://github.com/juhy0987/azas_application_server"
+app_dir: "/home/{{ bootstrap_user }}/azas_application_server"
+
+# Process tracking
+pid_file: "{{ app_dir }}/.app.pid"
+log_file: "{{ app_dir }}/app.log"
+
+# Runtime
+app_host: "0.0.0.0"
+app_port: 8000
+
+# deploy_branch 는 플레이북 레벨의 vars_files (deploy_vars.yml) 또는
+# -e deploy_branch=xxx 로 주입됩니다.

@@ -1,0 +1,13 @@
+# ~/ansible/service_deployment.yml
+---
+- name: "Service 정상 배포 및 확인"
+  hosts: [EC2, On-Premise]
+  gather_facts: no
+  become: no
+  remote_user: "{{ lookup('env', 'BOOTSTRAP_USER') }}"
+
+  vars_files:
+    - deploy_vars.yml
+
+  roles:
+    - service_deployment
