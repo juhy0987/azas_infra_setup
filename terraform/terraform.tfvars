@@ -17,8 +17,4 @@ cloudflare_ips = [
   "131.0.72.0/22"
 ]
 
-# 온프레미스 환경 엔드포인트 (공인 IP)
-onprem_public_ip      = "175.121.250.95"
 
-# 도메인 이름
-domain_name           = "cloudyim.store"

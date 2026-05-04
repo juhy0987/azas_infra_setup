@@ -23,10 +23,10 @@ resource "cloudflare_record" "route53_ns" {
 
 # 온프레미스 서버에 대한 상태 검사 생성
 resource "aws_route53_health_check" "onprem_check" {
-  fqdn        = var.domain_name # 도메인으로 접속하겠다
+  fqdn              = var.domain_name # 도메인으로 접속하겠다
   port              = 80
   type              = "HTTP"
-  resource_path     = "/"
+  resource_path     = "/health"
   failure_threshold = "3" # 3회에서 2회로 줄임 (60초 만에 감지)
   request_interval  = "30" # 30초에서 10초로 줄임 (빠른 검사 - 추가 비용 발생)
 
