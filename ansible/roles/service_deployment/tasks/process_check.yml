@@ -22,12 +22,8 @@
         else ''
       }}
 
-- name: "4. 프로세스 생존 확인"
-  command:
-    argv:
-      - kill
-      - -0
-      - "{{ current_pid }}"
+- name: "4. 프로세스 이름과 PID 일치 여부 확인"
+  shell: "ps -p {{ current_pid }} -o comm= | grep -q 'python'"
   register: proc_check
   when:
     - pid_stat.stat.exists

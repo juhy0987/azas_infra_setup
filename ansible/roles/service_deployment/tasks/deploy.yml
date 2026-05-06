@@ -13,7 +13,7 @@
   notify: restart_app
 
 - name: "3. uv sync - 의존성 동기화"
-  command: uv sync
+  command: "{{ uv_bin }} sync"
   args:
     chdir: "{{ app_dir }}"
   when: not is_running or not commits_match
