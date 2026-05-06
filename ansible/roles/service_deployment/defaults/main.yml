@@ -17,5 +17,8 @@ app_port: 8000
 
 # deploy_branch 는 플레이북 레벨의 vars_files (deploy_vars.yml) 또는
 # -e deploy_branch=xxx 로 주입됩니다.
+<<<<<<< HEAD
 
 uv_bin: "/home/{{ bootstrap_user }}/.local/bin/uv"
+=======
+>>>>>>> feature/#34/ACM

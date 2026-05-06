@@ -1,4 +1,4 @@
 postgres_packages:
-  - postgresql-server
-  - postgresql-contrib
+  - postgresql16-server
+  - postgresql16-contrib
   - python3-psycopg2
