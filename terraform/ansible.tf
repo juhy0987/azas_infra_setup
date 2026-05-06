@@ -21,7 +21,7 @@ resource "local_file" "ansible_inventory" {
             }
           }
         }
-        On_Premise = { # [On-Premise]
+        On-Premise = { # [On-Premise]
           hosts = {
             "${var.onprem_rocky_ip}" = { 
               ansible_user = var.BOOTSTRAP_USER
