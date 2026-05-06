@@ -1,0 +1,10 @@
+postgres_packages:
+  - postgresql-server
+  - postgresql-contrib
+  - python3-psycopg2
+
+pg_data_dir: "/var/lib/pgsql/data"
+pg_hba_path: "/var/lib/pgsql/data/pg_hba.conf"
+pg_conf_path: "/var/lib/pgsql/data/postgresql.conf"
+
+postgres_init: true
