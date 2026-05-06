@@ -7,7 +7,13 @@ resource "aws_launch_template" "project_lt" {
   network_interfaces {
     security_groups = [aws_security_group.ec2_sg.id]
   }
-
+  user_data = base64encode(<<-EOF
+      #!/bin/bash
+      dnf install -y nginx
+      systemctl enable nginx
+      systemctl start nginx
+    EOF
+  )
   update_default_version = true
 
   lifecycle {
