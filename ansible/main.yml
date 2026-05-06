@@ -6,21 +6,21 @@
   
   tasks:
     - name: "1. 인프라 의존성 설치"
-      import_playbook: dependency_setup.yml
+      include_role: dependency_setup
 
     - name: "2. 서비스 배포"
-      import_role:
+      include_role:
         name: service_deployment
       vars_files:
         - deploy_vars.yml
       become: no
     
     - name: "3. node_exporter 배포"
-      import_role:
+      include_role:
         name: node_exporter_setup
       hosts: all
     
     - name: "4. grafana 배포"
-      import_role:
+      include_role:
         name: monitor_setup
       connection: local
