@@ -14,8 +14,7 @@
     
     - name: "Prometheus Galaxy 컬렉션 설치"
       command: "ansible-galaxy collection install prometheus.prometheus"
-      args:
-        creates`: "~/.ansible/collections/ansible_collections/prometheus/prometheus"
+      when: "'prometheus' in monitoring_components"
 
     - name: "Prometheus 설치"
       include_tasks: prometheus.yml
