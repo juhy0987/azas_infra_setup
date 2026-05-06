@@ -6,10 +6,13 @@
 - import_playbook: node_exporter_setup.yml
 
 - name: "Prometheus Galaxy 컬렉션 설치"
+  hosts: localhost
   connection: local
   become: no
 
-  command: "ansible-galaxy collection install prometheus.prometheus"
+  tasks:
+    - name: "ansible galaxy collection 설치 - prometheus.prometheus"
+      command: "ansible-galaxy collection install prometheus.prometheus"
 
 - import_playbook: monitor_setup.yml
 
