@@ -15,7 +15,7 @@
 
   # 온프레미스 서버 설정 (On_Premise)
 - name: "Configure On-Premise Servers"
-  hosts: On_Premise
+  hosts: On-Pre
   become: yes
   vars:
     domain_name: "{{ lookup('env', 'TF_VAR_domain_name') }}"
