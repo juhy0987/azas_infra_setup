@@ -1,8 +1,4 @@
 ---
-- import_playbook: dependency_setup.yml
-- import_playbook: service_deployment.yml
-- import_playbook: node_exporter_setup.yml
-- import_playbook: monitor_setup.yml
 
 - name: "Prometheus Galaxy 컬렉션 설치"
   hosts: localhost
@@ -11,20 +7,20 @@
   tasks:
     - name: "ansible galaxy collection 설치 - prometheus.prometheus"
       command: "ansible-galaxy collection install prometheus.prometheus"
-
+  roles:
+    - role: monitor_setup
+      become: yes
 
   # 온프레미스 서버 설정 (On_Premise)
 - name: "Configure On-Premise Servers"
-  hosts: On-Pre
+  hosts: On-Premise
   become: yes
-  vars:
-    domain_name: "{{ lookup('env', 'TF_VAR_domain_name') }}"
-    tunnel_id: "{{ lookup('env', 'ANSIBLE_TUNNEL_ID') }}"
-    tunnel_cert_path: "/etc/cloudflared/{{ tunnel_id }}.json"
+    
   roles:
     - role: ec2_bootstrap     
     - role: dependency_setup
     - role: service_deployment
+    - role: node_exporter_setup
 
 # AWS EC2 인스턴스 설정 (EC2)
 - name: "Configure AWS EC2 Instances"
@@ -32,15 +28,13 @@
   become: yes
   vars:
     deploy_branch: "main"
-    domain_name: "{{ lookup('env', 'TF_VAR_domain_name') }}"
-    tunnel_id: "{{ lookup('env', 'ANSIBLE_TUNNEL_ID') }}"
-    tunnel_cert_path: "/etc/cloudflared/{{ tunnel_id }}.json"
   environment:
     PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
   roles:
     - role: ec2_bootstrap
     - role: dependency_setup
     - role: service_deployment
+    - role: node_exporter_setup
 
 # 데이터베이스 서버 설정 (DB)
 - name: "Configure Database Servers"

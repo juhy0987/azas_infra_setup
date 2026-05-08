@@ -68,6 +68,9 @@ resource "local_file" "ansible_config" {
         host_key_checking = False
         stdout_callback = yaml
 
+        # 권한 설정
+        allow_world_readable_tmpfiles = True
+
         [ssh_connection]
         # Bastion 경유 시 연결 유지를 위해 추천하는 옵션
         ssh_args = -o StrictHostKeyChecking=no -o ControlMaster=auto -o ControlPersist=60s

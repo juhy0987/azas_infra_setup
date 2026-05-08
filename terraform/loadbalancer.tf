@@ -16,7 +16,7 @@ resource "aws_security_group" "alb_sg" {
     from_port    = 80
     to_port      = 80
     protocol     = "tcp"
-    cidr_blocks  = var.cloudflare_ips # 보안을 위해 Cloudflare IP 대역으로 제한 권장
+    cidr_blocks  = ["0.0.0.0/0"]
   }
 
   # HTTPS 접속 허용
@@ -24,7 +24,7 @@ resource "aws_security_group" "alb_sg" {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = var.cloudflare_ips
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -64,6 +64,13 @@ resource "aws_security_group" "ec2_sg" {
     to_port         = 8000
     protocol        = "tcp"
     security_groups = [aws_security_group.alb_sg.id]
+  }
+  # Node Exporter 메트릭 수집 허용 (9100번)
+  ingress {
+    from_port   = 9100
+    to_port     = 9100
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] 
   }
   egress {
     from_port       = 0

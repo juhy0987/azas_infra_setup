@@ -12,9 +12,20 @@
   changed_when: true
   notify: restart_app
 
+- name: "디렉토리 소유권 강제 변경"
+  file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: "{{ ansible_user | default(lookup('env', 'BOOTSTRAP_USER')) | default('user1') }}"
+    group: "{{ ansible_user | default(lookup('env', 'BOOTSTRAP_USER')) | default('user1') }}"
+    recurse: yes
+  become: yes
+
 - name: "3. uv sync - 의존성 동기화"
   command: "{{ uv_bin }} sync"
   args:
     chdir: "{{ app_dir }}"
+  become: yes
+  become_user: "{{ ansible_user | default(lookup('env', 'BOOTSTRAP_USER')) | default('user1') }}"
   when: not is_running or not commits_match
   notify: restart_app
