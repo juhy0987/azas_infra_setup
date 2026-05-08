@@ -1,3 +1,13 @@
+terraform {
+    required_version = "~>1.14.0"
+    required_providers {
+      aws = {
+            source = "hashicorp/aws"
+            version = "~> 6.0" 
+      }
+    }
+}
+
 # Route 53 호스팅 영역을 직접 생성합니다.(도메인 등록되있어야함)
 variable "domain_name" {
   description = "Route 53 호스팅 영역에 사용할 도메인 이름"
@@ -51,7 +61,6 @@ resource "aws_acm_certificate_validation" "cert" {
 }
 
 # 출력 (Output) 설정
-
 output "route53_nameservers" {
   description = "가비아에 등록해야 할 네임서버 주소 4개"
   value       = aws_route53_zone.main.name_servers
@@ -67,4 +76,3 @@ output "route53_zone_id" {
   description = "Route 53 호스팅 영역 ID"
   value       = aws_route53_zone.main.zone_id
 }
-
