@@ -1,39 +1,17 @@
 ---
 
-- name: "Prometheus Galaxy 컬렉션 설치"
-  hosts: localhost
-  connection: local
-  become: no
-  tasks:
-    - name: "ansible galaxy collection 설치 - prometheus.prometheus"
-      command: "ansible-galaxy collection install prometheus.prometheus"
-  roles:
-    - role: monitor_setup
-      become: yes
+
 
   # 온프레미스 서버 설정 (On_Premise)
 - name: "Configure On-Premise Servers"
-  hosts: On-Premise
+  hosts: [On-Premise, EC2]
   become: yes
-    
+  environment:
+    PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+
   roles:
     - role: ec2_bootstrap     
     - role: dependency_setup
-    - role: service_deployment
-    - role: node_exporter_setup
-
-# AWS EC2 인스턴스 설정 (EC2)
-- name: "Configure AWS EC2 Instances"
-  hosts: EC2
-  become: yes
-  vars:
-    deploy_branch: "main"
-  environment:
-    PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
-  roles:
-    - role: ec2_bootstrap
-    - role: dependency_setup
-    - role: service_deployment
     - role: node_exporter_setup
 
 # 데이터베이스 서버 설정 (DB)
@@ -44,3 +22,22 @@
     - role: postgresql_setup
 
 
+# AWS EC2 인스턴스 설정 (EC2)
+- name: "Configure AWS EC2 Instances"
+  hosts: [On-Premise, EC2]
+  become: no
+  vars:
+    deploy_branch: "main"
+  environment:
+    PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+  roles:
+    - role: service_deployment
+
+- name: "Prometheus Galaxy 컬렉션 설치"
+  hosts: localhost
+  connection: local
+  become: no
+
+  roles:
+    - role: monitor_setup
+      become: yes
