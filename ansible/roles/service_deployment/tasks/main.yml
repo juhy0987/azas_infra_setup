@@ -3,9 +3,6 @@
 
 - name: "Service deployment"
   block:
-    - name: "Environment Setup"
-      include_tasks: setup_env.yml
-
     - name: "Repository sync"
       include_tasks: repo_sync.yml
 
