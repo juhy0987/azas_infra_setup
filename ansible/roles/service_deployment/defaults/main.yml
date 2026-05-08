@@ -19,3 +19,6 @@ app_port: 8000
 # -e deploy_branch=xxx 로 주입됩니다.
 
 uv_bin: "/home/{{ bootstrap_user }}/.local/bin/uv"
+
+
+

@@ -3,20 +3,26 @@
   dnf:
     name: epel-release
     state: present
-  when: ansible_os_family == "RedHat"
   become: yes
+  when: 
+    - ansible_os_family == "RedHat"
+    - "'Amazon' not in ansible_distribution"
 
 - name: "2. RedHat 계열 메타데이터 캐시 업데이트"
   dnf:
     update_cache: yes
-  when: ansible_os_family == "RedHat"
   become: yes
+  when: ansible_os_family == "RedHat"
 
-- name: "3. stress-ng 패키지 설치"
+- name: "3. 부하 테스트 도구 설치 (stress-ng 및 stress)"
   package:
-    name: stress-ng
+    name: "{{ item }}"
     state: present
   become: yes
+  # 도구 두 개를 리스트로 넣어 하나라도 설치되게 함
+  loop:
+    - stress-ng
+    - stress
 
 - name: "4. Apache Benchmark(ab) 도구 설치"
   package:

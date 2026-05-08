@@ -11,12 +11,12 @@ resource "aws_instance" "app_server" {
 
 # 베스천 호스트 EC2 인스턴스 생성
 resource "aws_instance" "bastion" {
-  ami                         = "ami-0c9c942bd7bf113a2" # 사용 중인 리전의 최신 Amazon Linux AMI
-  instance_type               = "t3.micro"
+  ami                         = data.aws_ami.al2023.id # 사용 중인 리전의 최신 Amazon Linux AMI
+  instance_type               = "t3.nano"
   subnet_id                   = aws_subnet.public_subnet_a.id # 반드시 퍼블릭 서브넷에 위치
   vpc_security_group_ids      = [aws_security_group.bastion_sg.id]
-  key_name                    = "본인의_키페어_이름"
-  associate_public_ip_address = true # 공인 IP 할당 필수
+  key_name                    = aws_key_pair.kp.key_name
+  associate_public_ip_address = true # 공인 IP 할당
 
   tags = { Name = "azas-bastion" }
 }

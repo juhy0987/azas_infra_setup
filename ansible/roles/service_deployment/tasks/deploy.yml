@@ -16,5 +16,7 @@
   command: "{{ uv_bin }} sync"
   args:
     chdir: "{{ app_dir }}"
+  become: yes
+  become_user: "{{ ansible_user | default(lookup('env', 'BOOTSTRAP_USER')) | default('user1') }}"
   when: not is_running or not commits_match
   notify: restart_app
