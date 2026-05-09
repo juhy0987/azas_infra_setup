@@ -1,47 +1,15 @@
-
-# 온프레미스 서버에 대한 상태 검사 생성
-resource "aws_route53_health_check" "onprem_check" {
-  fqdn              = var.domain_name # 도메인으로 접속하겠다
-  port              = 80
-  type              = "HTTP"
-  resource_path     = "/health"
-  failure_threshold = "3" # 3회에서 2회로 줄임 (60초 만에 감지)
-  request_interval  = "30" # 30초에서 10초로 줄임 (빠른 검사 - 추가 비용 발생)
-
-  tags = { Name = "onprem-health-check" }
-}
-
-# 기본(Primary) 레코드: 온프레미스 서버
-resource "aws_route53_record" "onprem_primary" {
+# Route53 도메인 → ALB
+#   - ALB 가 단일 진입점이며, AWS target group / 온프레미스 target group(Tailscale 너머)
+#     으로의 분배는 ALB 의 가중치 forward + 각 target group 헬스체크가 담당
+#   - 따라서 별도의 Route53 failover / onprem 헬스체크는 불필요
+resource "aws_route53_record" "main_alias" {
   zone_id = data.aws_route53_zone.main.zone_id
   name    = var.domain_name
   type    = "A"
-
-  failover_routing_policy {
-    type = "PRIMARY"
-  }
-
-  set_identifier  = "onprem"
-  health_check_id = aws_route53_health_check.onprem_check.id
-  records         = [var.onprem_public_ip] # 온프레미스 IP
-  ttl             = 60
-}
-
-# 보조(Secondary) 레코드: AWS ALB
-resource "aws_route53_record" "aws_secondary" {
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = var.domain_name
-  type    = "A"
-
-  failover_routing_policy {
-    type = "SECONDARY"
-  }
-
-  set_identifier = "aws"
 
   alias {
     name                   = aws_lb.main_alb.dns_name
     zone_id                = aws_lb.main_alb.zone_id
     evaluate_target_health = true
   }
-} 
+}

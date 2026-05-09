@@ -30,13 +30,6 @@ output "vpc_id" {
   description = "VPC ID"
 }
 
-# Route 53 상태 검사 ID
-# 온프레미스 상태 검사가 정상적으로 생성되었는지 식별할 때 씁니다.
-output "route53_health_check_id" {
-  value       = aws_route53_health_check.onprem_check.id
-  description = "Route 53 Health Check ID"
-}
-
 # 가용 영역(AZ) 확인
 # 현재 인스턴스가 어떤 건물(AZ)에 배치되었는지 확실히 보여줍니다.
 output "ec2_availability_zone" {
