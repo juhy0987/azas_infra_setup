@@ -1,7 +1,7 @@
-# 온프레미스 공인 ip
-variable "onprem_public_ip" {
-  description = "팀원 각자의 온프레미스 공인 IP (ifconfig.me 결과)"
-  type        = string
+# 도메인 네임
+variable "domain_name" {
+  description = "본인이 소유한 도메인 이름"
+  type        = string 
 }
 
 # trocky ip
