@@ -43,11 +43,11 @@ resource "aws_key_pair" "kp" {
     public_key = tls_private_key.pk.public_key_openssh
 }
 
-# 개인키를 가져오기
-# 'local_file' resource 를 이용하면 파일을 생성할 수 있다.
+# 개인키를 ansible 디렉토리로 직접 출력
+#   - 인벤토리(ansible_ssh_private_key_file)와 ProxyCommand 가 동일 파일을 참조
+#   - var.aws_key_path 기본값과 일치 (variables.tf 참조)
 resource "local_file" "ssh_key" {
-    # ${path.module}은 현재 실행경로를 의미한다.
-    filename        = "${path.module}/azas-key.pem"
+    filename        = "${path.module}/../ansible/azas-key.pem"
     content         = tls_private_key.pk.private_key_pem
     file_permission = "0600" # 파일 권한 설정
 }

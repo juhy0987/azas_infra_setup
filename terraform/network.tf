@@ -1,6 +1,6 @@
 # vpc 및 네트워크 생성 
 resource "aws_vpc" "vpc" {
-    cidr_block              = "192.168.0.0/16"
+    cidr_block              = "10.0.0.0/16"
     enable_dns_hostnames    = true
     tags = { Name           = "azas-vpc" }
 }
@@ -15,7 +15,7 @@ resource "aws_internet_gateway" "igw" {
 # 멀티 가용 영역 서브넷 설정 (ALB 필수 조건)
 resource "aws_subnet" "public_subnet_a" {
   vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = "192.168.8.0/24"
+  cidr_block              = "10.0.8.0/24"
   availability_zone       = "ap-northeast-2a"
   map_public_ip_on_launch = true
   tags = { Name           = "azas-public-2a" }
@@ -23,7 +23,7 @@ resource "aws_subnet" "public_subnet_a" {
 
 resource "aws_subnet" "public_subnet_c" {
   vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = "192.168.9.0/24"
+  cidr_block              = "10.0.9.0/24"
   availability_zone       = "ap-northeast-2c"
   map_public_ip_on_launch = true
   tags = { Name           = "azas-public-2c" }
@@ -32,7 +32,7 @@ resource "aws_subnet" "public_subnet_c" {
 # private subnet(ec2)
 resource "aws_subnet" "private_subnet_a" {
     vpc_id                = aws_vpc.vpc.id
-    cidr_block            = "192.168.1.0/24" # 256개의 ip를 이방에 할당
+    cidr_block            = "10.0.1.0/24" # 256개의 ip를 이방에 할당
     availability_zone     = "ap-northeast-2a"
     tags = { Name         = "azas-private-subnet" }
 }

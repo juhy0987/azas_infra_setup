@@ -30,10 +30,11 @@ variable "onprem_key_path" {
 }
 
 # AWS EC2 서버 ssh key 경로
-variable "aws_key_path" { 
+#   - terraform 의 local_file.ssh_key 가 이 경로(ansible 디렉토리)에 키를 출력
+variable "aws_key_path" {
   description = "ansible_ssh_common_args"
-  type = string
-  default = "~/.ssh/azas-key.pem"
+  type        = string
+  default     = "./azas-key.pem"
 }
 
 # DB Server ssh key 경로
