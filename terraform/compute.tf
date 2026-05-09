@@ -1,7 +1,7 @@
 # AWS EC2 인스턴스 생성 및 등록
 resource "aws_instance" "app_server" {
-  # 데이터 소스에서 가져온 ID를 사용합니다.
-  ami                    = data.aws_ami.al2023.id
+  # 사전-bake 된 공통 AMI 사용
+  ami                    = local.baked_ami_id
   instance_type          = "t3.micro"
   subnet_id              = aws_subnet.private_subnet_a.id
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]

@@ -2,7 +2,7 @@
 #    bootstrap + dependency_setup + service_deployment 이 이미 적용된 커스텀 AMI 사용
 resource "aws_launch_template" "project_lt" {
   name_prefix   = "azas-launch-template"
-  image_id      = "ami-0fccee39d20b9667d"
+  image_id      = local.baked_ami_id
   instance_type = "t3.micro"
 
   network_interfaces {
