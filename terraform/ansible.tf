@@ -53,7 +53,6 @@ resource "local_file" "ansible_inventory" {
           hosts = {
             "${var.db_server_ip}" = {
               ansible_user                  = "ec2-user"
-              bootstrap_user                = "ec2-user"
               ansible_ssh_private_key_file  = var.db_key_path
             }
           }
