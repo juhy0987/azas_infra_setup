@@ -24,14 +24,16 @@ resource "local_file" "ansible_inventory" {
         On-Premise = { # [On-Premise]
           hosts = {
             "${var.onprem_rocky_ip}" = { 
-              ansible_user = var.BOOTSTRAP_USER
-              ansible_become_password = var.BOOTSTRAP_USER
-              ansible_ssh_private_key_file = var.onprem_key_path
+              ansible_user                  = var.BOOTSTRAP_USER
+              bootstrap_user                = var.BOOTSTRAP_USER
+              ansible_become_password       = var.BOOTSTRAP_USER
+              ansible_ssh_private_key_file  = var.onprem_key_path
             }
             "${var.onprem_ubuntu_ip}" = { 
-              ansible_user = var.BOOTSTRAP_USER
-              ansible_become_password = var.BOOTSTRAP_USER
-              ansible_ssh_private_key_file = var.onprem_key_path
+              ansible_user                  = var.BOOTSTRAP_USER
+              bootstrap_user                = var.BOOTSTRAP_USER
+              ansible_become_password       = var.BOOTSTRAP_USER
+              ansible_ssh_private_key_file  = var.onprem_key_path
             }
           }
         }
@@ -40,6 +42,7 @@ resource "local_file" "ansible_inventory" {
             # Bastion을 통해 접속하므로 Private IP를 사용합니다.
             "${aws_instance.app_server.private_ip}" = {
               ansible_user                  = "ec2-user"
+              bootstrap_user                = "ec2-user"
               ansible_ssh_private_key_file  = var.aws_key_path
               # EC2 그룹에만 Bastion 프록시 설정을 주입
               ansible_ssh_common_args       = "-o ProxyCommand='ssh -i ${var.aws_key_path} -W %h:%p -q ec2-user@${aws_instance.bastion.public_ip}'"
@@ -49,8 +52,9 @@ resource "local_file" "ansible_inventory" {
         DB = { # [DB]
           hosts = {
             "${var.db_server_ip}" = {
-              ansible_user     = "ec2-user"
-              ansible_ssh_private_key_file = var.db_key_path
+              ansible_user                  = "ec2-user"
+              bootstrap_user                = "ec2-user"
+              ansible_ssh_private_key_file  = var.db_key_path
             }
           }
         }
