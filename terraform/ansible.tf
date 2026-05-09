@@ -13,6 +13,11 @@ resource "local_file" "ansible_inventory" {
   filename = local.inventory_path
   content = yamlencode({
     all = {
+      # 모든 호스트에 적용되는 기본 변수
+      #   - baked AMI(AL2023) / Rocky / Ubuntu 모두 /usr/bin/python3 보유
+      vars = {
+        ansible_python_interpreter = "/usr/bin/python3"
+      }
       children = {
         Local = { # [Local]
           hosts = {
