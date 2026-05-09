@@ -1,8 +1,8 @@
 ---
 # EC2 Bootstrap Role Defaults (Amazon Ubuntu 전용)
 
-# AMI 기본 접속 유저 (Ubuntu AMI)
-bootstrap_remote_user: ubuntu
+# AMI 기본 접속 유저 (Amazon AMI)
+bootstrap_remote_user: ec2-user
 
 # 생성할 관리 유저
 bootstrap_user: user1
