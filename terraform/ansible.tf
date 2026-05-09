@@ -54,6 +54,18 @@ resource "local_file" "ansible_inventory" {
             }
           }
         }
+        Tailscale = { # [Tailscale] - bastion 자체에 적용
+          hosts = {
+            # bastion 의 public IP 로 직접 접속 (ProxyCommand 불필요)
+            "${aws_instance.bastion.public_ip}" = {
+              ansible_user                 = "ec2-user"
+              ansible_ssh_private_key_file = var.aws_key_path
+              # tailscale 롤이 사용하는 변수 오버라이드
+              host_name                    = "azas-bastion"
+              aws_vpc_cidr                 = aws_vpc.vpc.cidr_block
+            }
+          }
+        }
       }
     }
   })
@@ -105,5 +117,19 @@ resource "terraform_data" "ansible_provisioning" {
     # ansible 디렉토리로 이동
     # SSH ProxyCommand를 환경변수나 인자로 주입하여 실행
     command = "cd ${local.ansible_dir} && ansible-playbook -i inventory.yml main.yml"
+  }
+}
+
+# Bastion 이 올라오면 Tailscale 자동 등록 + subnet route 광고/승인
+#   - 롤 자체가 TAILSCALE_AUTH_KEY / TAILSCALE_API_KEY / TAILNET_NAME 환경변수를 lookup
+#   - terraform apply 실행 환경에 위 env 가 export 되어 있어야 함
+resource "terraform_data" "tailscale_provisioning" {
+  depends_on = [terraform_data.wait_for_instance, local_file.ansible_inventory]
+
+  # bastion 이 재생성될 때마다 Tailscale 다시 적용 (디바이스 등록/라우트 승인)
+  triggers_replace = aws_instance.bastion.id
+
+  provisioner "local-exec" {
+    command = "cd ${local.ansible_dir} && ansible-playbook -i inventory.yml tailscale.yml"
   }
 }

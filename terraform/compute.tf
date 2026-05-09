@@ -10,6 +10,8 @@ resource "aws_instance" "app_server" {
 }
 
 # 베스천 호스트 EC2 인스턴스 생성
+#   - SSH bastion 역할 + Tailscale subnet router 겸용
+#   - on-prem 대역(var.onprem_cidr) 트래픽을 IP 포워딩 + Tailscale 터널로 전달
 resource "aws_instance" "bastion" {
   ami                         = data.aws_ami.al2023.id # 사용 중인 리전의 최신 Amazon Linux AMI
   instance_type               = "t3.nano"
@@ -17,6 +19,14 @@ resource "aws_instance" "bastion" {
   vpc_security_group_ids      = [aws_security_group.bastion_sg.id]
   key_name                    = aws_key_pair.kp.key_name
   associate_public_ip_address = true # 공인 IP 할당
+  source_dest_check           = false # subnet router 동작에 필수 (포워딩 트래픽 통과)
+
+  # Tailscale API 매칭에 사용할 안정적인 hostname 고정
+  user_data = base64encode(<<-EOF
+    #!/bin/bash
+    hostnamectl set-hostname azas-bastion
+  EOF
+  )
 
   tags = { Name = "azas-bastion" }
 }

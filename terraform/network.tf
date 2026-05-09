@@ -57,6 +57,12 @@ resource "aws_route_table" "public_rt" {
         cidr_block  = "0.0.0.0/0"
         gateway_id  = aws_internet_gateway.igw.id
     }
+    # on-prem 대역 → bastion ENI (Tailscale 터널 경유)
+    # ALB 가 var.onprem_cidr IP 타겟으로 트래픽을 보낼 때 이 라우트로 bastion 으로 향함
+    route {
+        cidr_block           = var.onprem_cidr
+        network_interface_id = aws_instance.bastion.primary_network_interface_id
+    }
     tags = {
         Name        = "azas-route"
     }
@@ -78,6 +84,11 @@ resource "aws_route_table" "private_rt" {
   route {
     cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.nat_gw.id
+  }
+  # on-prem 대역 → bastion ENI (Tailscale 터널 경유)
+  route {
+    cidr_block           = var.onprem_cidr
+    network_interface_id = aws_instance.bastion.primary_network_interface_id
   }
   tags = {
     Name = "azas-private-rt"

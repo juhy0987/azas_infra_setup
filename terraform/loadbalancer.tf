@@ -80,6 +80,7 @@ resource "aws_security_group" "ec2_sg" {
   }
 }
 # 베스천 호스트 전용 보안 그룹
+#   - SSH bastion + Tailscale subnet router 역할 겸용
 resource "aws_security_group" "bastion_sg" {
   name          = "azas-bastion-sg"
   vpc_id        = aws_vpc.vpc.id
@@ -89,6 +90,14 @@ resource "aws_security_group" "bastion_sg" {
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"] # 본인 IP만 허용
+  }
+
+  # VPC 내부 → bastion ENI 로 들어와 on-prem 대역으로 포워딩되는 트래픽 허용
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = [aws_vpc.vpc.cidr_block]
   }
 
   egress {
@@ -152,6 +161,7 @@ resource "aws_lb_listener" "http" {
 }
 
 # HTTPS 리스너 설정 (443 포트)
+#   - AWS target group / 온프레미스 target group 에 가중치 기반으로 분배
 resource "aws_lb_listener" "https" {
   load_balancer_arn     = aws_lb.main_alb.arn # 식별 주소
   port                  = "443"
@@ -159,13 +169,58 @@ resource "aws_lb_listener" "https" {
   certificate_arn       = data.aws_acm_certificate.cert.arn
 
   default_action {
-      type              = "forward"
-      target_group_arn  = aws_lb_target_group.aws_tg.arn # EC2 전용 타겟 그룹으로만 전송
+    type = "forward"
+    forward {
+      target_group {
+        arn    = aws_lb_target_group.aws_tg.arn
+        weight = var.alb_aws_weight
+      }
+      target_group {
+        arn    = aws_lb_target_group.onprem_tg.arn
+        weight = var.alb_onprem_weight
+      }
     }
+  }
 }
 
 resource "aws_lb_target_group_attachment" "aws_target" {
   target_group_arn = aws_lb_target_group.aws_tg.arn
   target_id        = aws_instance.app_server.id
   port             = 8000
-} 
+}
+
+# 온프레미스(Tailscale 너머) 호스트 전용 target group
+#   - target_type = "ip" 로 VPC CIDR 밖 IP 등록 가능
+#   - 라우트 테이블의 onprem_cidr -> bastion ENI 규칙으로 트래픽이 Tailscale 터널을 통과
+resource "aws_lb_target_group" "onprem_tg" {
+  name        = "azas-onprem-tg"
+  port        = 8000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.vpc.id
+  target_type = "ip"
+
+  health_check {
+    path                = "/health"
+    port                = "traffic-port"
+    protocol            = "HTTP"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    matcher             = "200"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# 온프레미스 IP 들을 onprem_tg 에 부착
+#   - VPC CIDR 밖 IP 이므로 availability_zone = "all" 필수
+resource "aws_lb_target_group_attachment" "onprem_targets" {
+  for_each          = toset(var.onprem_target_ips)
+  target_group_arn  = aws_lb_target_group.onprem_tg.arn
+  target_id         = each.value
+  port              = 8000
+  availability_zone = "all"
+}
