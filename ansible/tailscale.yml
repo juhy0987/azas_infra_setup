@@ -5,3 +5,12 @@
 
   roles:
     - role: tailscale
+
+- name: tailscale setup
+  hosts: Local
+  become: yes
+  vars:
+    aws_vpc_cidr: "172.16.8.0/24"
+
+  roles:
+    - role: tailscale
