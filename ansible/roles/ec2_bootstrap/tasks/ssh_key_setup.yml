@@ -1,11 +1,9 @@
 ---
 # SSH public key injection task
 
-- name: "Inject management server public key to {{ bootstrap_user }}"
+- name: "Inject defaultkey public key to {{ bootstrap_user }}"
   authorized_key:
     user: "{{ bootstrap_user }}"
     state: present
-    key: "{{ lookup('file', bootstrap_key_dir ~ '/' ~ inventory_hostname ~ '.pem.pub') }}"
+    key: "{{ lookup('file', bootstrap_public_key_path) }}"
     exclusive: "{{ bootstrap_authorized_key_exclusive | bool }}"
-  
-
