@@ -1,7 +1,8 @@
 # 0. Launch Template
+#    bootstrap + dependency_setup + service_deployment 이 이미 적용된 커스텀 AMI 사용
 resource "aws_launch_template" "project_lt" {
   name_prefix   = "azas-launch-template"
-  image_id      = data.aws_ami.al2023.id
+  image_id      = "ami-0fccee39d20b9667d"
   instance_type = "t3.micro"
 
   network_interfaces {
@@ -10,23 +11,29 @@ resource "aws_launch_template" "project_lt" {
 
   user_data = base64encode(<<-EOF
     #!/bin/bash
+    set -e
 
-    # 1. nginx 설치
-    dnf install -y nginx
-    systemctl enable nginx
-    systemctl start nginx
+    # ============================================================
+    # * 애플리케이션 서비스 구동 (azas_application_server)
+    #    - AMI 에 이미 clone 되어 있으면 최신화, 없으면 clone
+    #    - user1 로 uv 를 통해 main 서버 기동
+    # ============================================================
+    APP_USER=user1
+    APP_DIR=/home/$APP_USER/azas_application_server
+    REPO_URL=https://github.com/juhy0987/azas_application_server
+    UV_BIN=/home/$APP_USER/.local/bin/uv
+    APP_HOST=0.0.0.0
+    APP_PORT=8000
+    LOG_FILE=$APP_DIR/app.log
+    PID_FILE=$APP_DIR/.app.pid
 
-    # 2. node_exporter 설치
-    cd /tmp
-    wget -q https://github.com/prometheus/node_exporter/releases/download/v1.7.0/node_exporter-1.7.0.linux-amd64.tar.gz
-    if [ $? -eq 0 ]; then
-      tar xvfz node_exporter-1.7.0.linux-amd64.tar.gz
-      cp node_exporter-1.7.0.linux-amd64/node_exporter /usr/local/bin/
-      printf '[Unit]\nDescription=Node Exporter\nAfter=network.target\n\n[Service]\nUser=root\nExecStart=/usr/local/bin/node_exporter\n\n[Install]\nWantedBy=multi-user.target\n' > /etc/systemd/system/node_exporter.service
-      systemctl daemon-reload
-      systemctl enable node_exporter
-      systemctl start node_exporter
+    if [ ! -d "$APP_DIR/.git" ]; then
+      sudo -u "$APP_USER" git clone "$REPO_URL" "$APP_DIR"
+    else
+      sudo -u "$APP_USER" git -C "$APP_DIR" pull --ff-only
     fi
+
+    sudo -u "$APP_USER" bash -c "cd $APP_DIR && nohup $UV_BIN run uvicorn main:app --host $APP_HOST --port $APP_PORT > $LOG_FILE 2>&1 < /dev/null & echo \$! > $PID_FILE"
   EOF
   )
 

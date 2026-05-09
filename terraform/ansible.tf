@@ -100,7 +100,7 @@ resource "terraform_data" "ansible_provisioning" {
 
   # EC2 인스턴스가 재생성될 때마다 Ansible 다시 실행
   triggers_replace = aws_instance.app_server.id
-  
+
   provisioner "local-exec" {
     # ansible 디렉토리로 이동
     # SSH ProxyCommand를 환경변수나 인자로 주입하여 실행

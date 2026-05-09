@@ -47,9 +47,9 @@ variable "db_key_path" {
 }
 
 # 대상서버에 원격 접속 시도할때 사용하는 로그인 아이디,비밀번호
-variable "BOOTSTRAP_USER" { 
+variable "BOOTSTRAP_USER" {
   description = "ansible_user, ansible_become_password"
-  type = string 
+  type = string
 }
 
 
