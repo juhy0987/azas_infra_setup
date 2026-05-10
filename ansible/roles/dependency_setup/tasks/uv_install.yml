@@ -1,4 +1,15 @@
 ---
+# 0. baked AMI 등 사전 환경에서 root 소유로 만들어진 ~/.local 잔재를 정규화
+#    - 디렉토리가 없으면 생성, 있으면 user1 소유로 일괄 chown
+#    - root 권한 (play-level become: yes 상속) 으로 실행
+- name: "0. ~/.local ownership 정규화 ({{ bootstrap_user }})"
+  ansible.builtin.file:
+    path: "/home/{{ bootstrap_user }}/.local"
+    state: directory
+    owner: "{{ bootstrap_user }}"
+    group: "{{ bootstrap_user }}"
+    recurse: yes
+
 - name: "1. uv 설치 여부 확인"
   stat:
     path: "{{ uv_bin }}"
@@ -12,12 +23,17 @@
     force: yes
   when: not uv_stat.stat.exists
 
+# 3 / 5 번은 반드시 bootstrap_user 권한으로 실행해야 함
+#   - root 로 실행하면 /home/{{ bootstrap_user }}/.local/* 가 root 소유로 생성되어
+#     이후 user1 의 `uv sync` 가 EACCES 로 실패함
 - name: "3. uv 설치 실행"
   command: "{{ uv_install_script_tmp }}"
   args:
     creates: "{{ uv_bin }}"
   environment:
     UV_INSTALL_DIR: "{{ uv_install_dir }}"
+  become: yes
+  become_user: "{{ bootstrap_user }}"
   when: not uv_stat.stat.exists
 
 - name: "4. 설치 스크립트 정리"
@@ -28,6 +44,8 @@
 
 - name: "5. 버전 확인"
   command: "{{ uv_bin }} --version"
+  become: yes
+  become_user: "{{ bootstrap_user }}"
   register: uv_version
   changed_when: false
 

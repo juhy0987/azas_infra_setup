@@ -13,6 +13,11 @@ resource "local_file" "ansible_inventory" {
   filename = local.inventory_path
   content = yamlencode({
     all = {
+      # 모든 호스트에 적용되는 기본 변수
+      #   - baked AMI(AL2023) / Rocky / Ubuntu 모두 /usr/bin/python3 보유
+      vars = {
+        ansible_python_interpreter = "/usr/bin/python3"
+      }
       children = {
         Local = { # [Local]
           hosts = {
@@ -54,22 +59,53 @@ resource "local_file" "ansible_inventory" {
             }
           }
         }
+        Tailscale = { # [Tailscale] - bastion 자체에 적용
+          hosts = {
+            # bastion 의 public IP 로 직접 접속 (ProxyCommand 불필요)
+            "${aws_instance.bastion.public_ip}" = {
+              ansible_user                 = "ec2-user"
+              ansible_ssh_private_key_file = var.aws_key_path
+              # tailscale 롤이 사용하는 변수 오버라이드
+              host_name                    = "azas-bastion"
+              aws_vpc_cidr                 = aws_vpc.vpc.cidr_block
+            }
+          }
+        }
       }
     }
   })
 }
 
+# IAM access key 를 ansible 디렉토리의 별도 env 파일로 기록
+#   - terraform_data 의 environment 블록에 직접 넣으면 provisioner 출력 전체가
+#     sensitive 로 마스킹되어 ansible 진행 로그를 볼 수 없음
+#   - 파일로 빼고 provisioner 안에서 source 하면 출력 정상화
+resource "local_sensitive_file" "ansible_aws_creds" {
+  filename        = "${local.ansible_dir}/.aws.env"
+  file_permission = "0600"
+  content         = <<-EOT
+    AWS_ACCESS_KEY_ID=${aws_iam_access_key.management_consumer.id}
+    AWS_SECRET_ACCESS_KEY=${aws_iam_access_key.management_consumer.secret}
+  EOT
+}
+
 # ansible.cfg 파일 생성
+#   - inventory 두 파일 병행:
+#       inventory.yml  : Terraform 정적 (On-Premise / DB / Tailscale / Local + standalone EC2)
+#       aws_ec2.yml    : amazon.aws 동적 (ASG 인스턴스를 매 실행시점에 자동 picksup)
 resource "local_file" "ansible_config" {
-    filename = local.config_path # 경로 확인 필요
+    filename = local.config_path
     content = <<-EOF
         [defaults]
-        inventory = ./inventory.yml
+        inventory = ./inventory.yml,./aws_ec2.yml
         host_key_checking = False
         stdout_callback = yaml
 
         # 권한 설정
         allow_world_readable_tmpfiles = True
+
+        [inventory]
+        enable_plugins = amazon.aws.aws_ec2,yaml,ini
 
         [ssh_connection]
         # Bastion 경유 시 연결 유지를 위해 추천하는 옵션
@@ -94,16 +130,49 @@ resource "terraform_data" "wait_for_instance" {
 }
 
 # Ansible 실행 (Bastion 호스트를 통한 SSH 터널링 포함)
+#   - tailscale_provisioning 이 끝난 뒤에 main.yml 실행
+#   - main.yml 의 On-Premise 대상(172.16.8.x) 도달이 management 서버의 tailnet 가입에 의존
+#   - AWS 자격증명 / 큐 URL 은 environment 블록으로 직접 주입 (ansible/.env 에 안 둠)
+#   - boto3 + amazon.aws collection 도 1회 사전 설치하여 aws_ec2 동적 인벤토리/asg_consumer 가
+#     첫 apply 부터 정상 동작하도록 함
 resource "terraform_data" "ansible_provisioning" {
-  # 인스턴스와 인벤토리 파일이 준비된 후 실행
-  depends_on = [terraform_data.wait_for_instance]
+  depends_on = [terraform_data.tailscale_provisioning]
 
-  # EC2 인스턴스가 재생성될 때마다 Ansible 다시 실행
   triggers_replace = aws_instance.app_server.id
-  
+
   provisioner "local-exec" {
-    # ansible 디렉토리로 이동
-    # SSH ProxyCommand를 환경변수나 인자로 주입하여 실행
-    command = "cd ${local.ansible_dir} && ansible-playbook -i inventory.yml main.yml"
+    # sensitive 가 아닌 값만 environment 에 — 마스킹 회피
+    environment = {
+      AWS_REGION          = "ap-northeast-2"
+      AWS_DEFAULT_REGION  = "ap-northeast-2"
+      ASG_TASKS_QUEUE_URL = aws_sqs_queue.asg_tasks.url
+      ANSIBLE_DIR         = local.ansible_dir
+    }
+
+    command = <<-EOT
+      set -e
+      cd ${local.ansible_dir}
+      python3.12 -m pip install --user --quiet boto3 botocore 2>/dev/null \
+        || python3.12 -m pip install --user --quiet --break-system-packages boto3 botocore 2>/dev/null \
+        || true
+      # AWS 자격증명은 local_sensitive_file 로 떨어진 .aws.env 에서 source
+      [ -f .aws.env ] && set -a && . ./.aws.env && set +a
+      if [ -f .env ]; then set -a; . ./.env; set +a; fi
+      ansible-playbook -i inventory.yml -i aws_ec2.yml main.yml
+    EOT
+  }
+}
+
+# Bastion 이 올라오면 Tailscale 자동 등록 + subnet route 광고/승인
+#   - 롤 자체가 TAILSCALE_AUTH_KEY / TAILSCALE_API_KEY / TAILNET_NAME 환경변수를 lookup
+#   - terraform apply 실행 환경에 위 env 가 export 되어 있어야 함
+resource "terraform_data" "tailscale_provisioning" {
+  depends_on = [terraform_data.wait_for_instance, local_file.ansible_inventory]
+
+  # bastion 이 재생성될 때마다 Tailscale 다시 적용 (디바이스 등록/라우트 승인)
+  triggers_replace = aws_instance.bastion.id
+
+  provisioner "local-exec" {
+    command = "cd ${local.ansible_dir} && ansible-playbook -i inventory.yml tailscale.yml"
   }
 }

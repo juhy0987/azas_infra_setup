@@ -1,7 +1,7 @@
 ---
 # Service Deployment Role Defaults
 
-bootstrap_user: "{{ lookup('env', 'BOOTSTRAP_USER') }}"
+bootstrap_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
 
 # Repository
 repo_url: "https://github.com/juhy0987/azas_application_server"
@@ -19,6 +19,18 @@ app_port: 8000
 # -e deploy_branch=xxx 로 주입됩니다.
 
 uv_bin: "/home/{{ bootstrap_user }}/.local/bin/uv"
+
+# 앱 런타임 env (templates/app.env.j2 로 렌더링)
+#   - DB_HOST: 인벤토리의 DB 그룹 첫 호스트
+#   - DB_USER/PASS/NAME: ansible/.env 에서 source 된 env (terraform_data 에서 자동 source)
+#   - ADMIN_PASSWORD: ansible/.env 에 명시 (미설정 시 앱이 부팅마다 난수 생성)
+db_host: "{{ groups['DB'][0] | default('') }}"
+db_port: 5432
+db_user: "{{ lookup('env', 'DB_USER') }}"
+db_pass: "{{ lookup('env', 'DB_PASS') }}"
+db_name: "{{ lookup('env', 'DB_NAME') }}"
+admin_username: "{{ lookup('env', 'ADMIN_USERNAME') | default('admin', true) }}"
+admin_password: "{{ lookup('env', 'ADMIN_PASSWORD') }}"
 
 
 

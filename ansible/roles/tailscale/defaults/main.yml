@@ -2,3 +2,5 @@ tailscale_auth_key: "{{ lookup('env', 'TAILSCALE_AUTH_KEY') }}"
 tailscale_api_key: "{{ lookup('env', 'TAILSCALE_API_KEY') }}"
 tailnet_name: "{{ lookup('env', 'TAILNET_NAME') }}"
 aws_vpc_cidr: "10.0.0.0/16"
+
+host_name: "{{ ansible_hostname | default(inventory_hostname) }}"

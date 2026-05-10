@@ -1,0 +1,19 @@
+---
+# asg_consumer 데몬 배포 기본값
+asg_consumer_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
+
+asg_consumer_install_dir: "/opt/asg_consumer"
+asg_consumer_script_path: "{{ asg_consumer_install_dir }}/asg_consumer.py"
+asg_consumer_env_path: "{{ asg_consumer_install_dir }}/asg_consumer.env"
+asg_consumer_service: asg_consumer
+
+# 환경변수 (ansible/.env 에서 source 된 값들이 lookup 으로 들어옴)
+asg_tasks_queue_url: "{{ lookup('env', 'ASG_TASKS_QUEUE_URL') }}"
+aws_region: "{{ lookup('env', 'AWS_REGION') | default('ap-northeast-2', true) }}"
+aws_access_key_id: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+aws_secret_access_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+
+# 데몬이 ansible-playbook 을 실행할 디렉토리 (management 서버상의 ansible 루트)
+asg_consumer_ansible_dir: "{{ lookup('env', 'ANSIBLE_DIR') | default(playbook_dir, true) }}"
+asg_consumer_inventories: "inventory.yml,aws_ec2.yml"
+asg_consumer_playbook: "main.yml"

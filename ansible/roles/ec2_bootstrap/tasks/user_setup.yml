@@ -1,10 +1,15 @@
 ---
 # User account setup task
 
+- name: "Ensure {{ bootstrap_admin_group }} group exists"
+  group:
+    name: "{{ bootstrap_admin_group }}"
+    state: present
+
 - name: "Create {{ bootstrap_user }} user account"
   user:
     name: "{{ bootstrap_user }}"
     shell: "{{ bootstrap_user_shell }}"
-    groups: "{{ bootstrap_admin_group_map.get(ansible_os_family, bootstrap_admin_group_default) }}"
+    groups: "{{ bootstrap_admin_group }}"
     append: yes
     state: present
