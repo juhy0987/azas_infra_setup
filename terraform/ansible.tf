@@ -119,17 +119,34 @@ resource "terraform_data" "wait_for_instance" {
 # Ansible 실행 (Bastion 호스트를 통한 SSH 터널링 포함)
 #   - tailscale_provisioning 이 끝난 뒤에 main.yml 실행
 #   - main.yml 의 On-Premise 대상(172.16.8.x) 도달이 management 서버의 tailnet 가입에 의존
+#   - AWS 자격증명 / 큐 URL 은 environment 블록으로 직접 주입 (ansible/.env 에 안 둠)
+#   - boto3 + amazon.aws collection 도 1회 사전 설치하여 aws_ec2 동적 인벤토리/asg_consumer 가
+#     첫 apply 부터 정상 동작하도록 함
 resource "terraform_data" "ansible_provisioning" {
-  # tailscale 터널이 올라온 뒤에만 main.yml 실행
   depends_on = [terraform_data.tailscale_provisioning]
 
-  # EC2 인스턴스가 재생성될 때마다 Ansible 다시 실행
   triggers_replace = aws_instance.app_server.id
 
   provisioner "local-exec" {
-    # ansible 디렉토리로 이동, .env 가 있으면 자동 source 후 ansible-playbook 실행
-    #   - service_deployment 가 lookup('env', 'DB_USER') 등으로 ansible/.env 의 키들을 픽업
-    command = "cd ${local.ansible_dir} && if [ -f .env ]; then set -a; . ./.env; set +a; fi && ansible-playbook -i inventory.yml main.yml"
+    environment = {
+      AWS_ACCESS_KEY_ID     = aws_iam_access_key.management_consumer.id
+      AWS_SECRET_ACCESS_KEY = aws_iam_access_key.management_consumer.secret
+      AWS_REGION            = "ap-northeast-2"
+      AWS_DEFAULT_REGION    = "ap-northeast-2"
+      ASG_TASKS_QUEUE_URL   = aws_sqs_queue.asg_tasks.url
+      ANSIBLE_DIR           = local.ansible_dir
+    }
+
+    command = <<-EOT
+      set -e
+      cd ${local.ansible_dir}
+      python3.12 -m pip install --user --quiet boto3 botocore 2>/dev/null \
+        || python3.12 -m pip install --user --quiet --break-system-packages boto3 botocore 2>/dev/null \
+        || true
+      ansible-galaxy collection install amazon.aws --upgrade -q
+      if [ -f .env ]; then set -a; . ./.env; set +a; fi
+      ansible-playbook -i inventory.yml -i aws_ec2.yml main.yml
+    EOT
   }
 }
 
