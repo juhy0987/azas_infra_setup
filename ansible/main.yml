@@ -2,15 +2,21 @@
 
 
 
-  # 온프레미스 서버 설정 (On_Premise)
-- name: "Configure On-Premise Servers"
+  # 모든 대상 호스트 첫 부팅 처리: user1 + wheel + NOPASSWD + defaultkey 주입
+- name: "Bootstrap all servers (user1 + defaultkey)"
+  hosts: [On-Premise, EC2, DB]
+  become: yes
+  roles:
+    - role: ec2_bootstrap
+
+  # EC2 / 온프레미스 공통 셋업 (DB 는 제외)
+- name: "Configure On-Premise / EC2 Servers"
   hosts: [On-Premise, EC2]
   become: yes
   environment:
     PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
 
   roles:
-    - role: ec2_bootstrap     
     - role: dependency_setup
     - role: node_exporter_setup
 

@@ -38,10 +38,12 @@ variable "aws_key_path" {
 }
 
 # DB Server ssh key 경로
-variable "db_key_path" { 
+#   - DB 는 ec2_bootstrap 전 상태로 들어가므로 공통키(defaultkey) 가 아직 없음
+#   - 초기 로그인용 개별 키(one_key.pem) 사용
+variable "db_key_path" {
   description = "ansible_ssh_private_key_file"
-  type = string 
-  default = "~/.ssh/defaultkey.pem"
+  type        = string
+  default     = "~/.ssh/one_key.pem"
 }
 
 # 대상서버에 원격 접속 시도할때 사용하는 로그인 아이디,비밀번호
