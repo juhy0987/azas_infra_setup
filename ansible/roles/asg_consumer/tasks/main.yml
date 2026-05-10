@@ -1,0 +1,54 @@
+---
+- name: "boto3 / amazon.aws collection 설치 (사용자 권한)"
+  become: no
+  block:
+    - name: "boto3 설치 (--user)"
+      ansible.builtin.pip:
+        name: boto3
+        state: present
+        extra_args: --user
+
+    - name: "amazon.aws collection 설치"
+      ansible.builtin.command: ansible-galaxy collection install amazon.aws
+      args:
+        creates: "~/.ansible/collections/ansible_collections/amazon/aws"
+
+- name: "데몬 설치 디렉토리 생성"
+  ansible.builtin.file:
+    path: "{{ asg_consumer_install_dir }}"
+    state: directory
+    mode: "0755"
+  become: yes
+
+- name: "데몬 스크립트 배포"
+  ansible.builtin.copy:
+    src: asg_consumer.py
+    dest: "{{ asg_consumer_script_path }}"
+    mode: "0755"
+  become: yes
+
+- name: "EnvironmentFile 렌더 (자격증명 포함)"
+  ansible.builtin.template:
+    src: asg_consumer.env.j2
+    dest: "{{ asg_consumer_env_path }}"
+    owner: "{{ asg_consumer_user }}"
+    group: "{{ asg_consumer_user }}"
+    mode: "0600"
+  become: yes
+  no_log: true
+
+- name: "systemd unit 렌더"
+  ansible.builtin.template:
+    src: asg_consumer.service.j2
+    dest: "/etc/systemd/system/{{ asg_consumer_service }}.service"
+    mode: "0644"
+  become: yes
+  notify: reload systemd
+
+- name: "데몬 enable + start"
+  ansible.builtin.systemd:
+    name: "{{ asg_consumer_service }}"
+    enabled: yes
+    state: restarted
+    daemon_reload: yes
+  become: yes

@@ -57,3 +57,5 @@
   roles:
     - role: monitor_setup
       become: yes
+    - role: asg_consumer
+

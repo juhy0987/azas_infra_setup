@@ -1,0 +1,15 @@
+[Unit]
+Description=ASG SQS consumer (triggers ansible-playbook on ASG events)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ asg_consumer_user }}
+EnvironmentFile={{ asg_consumer_env_path }}
+ExecStart=/usr/bin/python3 {{ asg_consumer_script_path }}
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

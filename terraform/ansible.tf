@@ -77,16 +77,22 @@ resource "local_file" "ansible_inventory" {
 }
 
 # ansible.cfg 파일 생성
+#   - inventory 두 파일 병행:
+#       inventory.yml  : Terraform 정적 (On-Premise / DB / Tailscale / Local + standalone EC2)
+#       aws_ec2.yml    : amazon.aws 동적 (ASG 인스턴스를 매 실행시점에 자동 picksup)
 resource "local_file" "ansible_config" {
-    filename = local.config_path # 경로 확인 필요
+    filename = local.config_path
     content = <<-EOF
         [defaults]
-        inventory = ./inventory.yml
+        inventory = ./inventory.yml,./aws_ec2.yml
         host_key_checking = False
         stdout_callback = yaml
 
         # 권한 설정
         allow_world_readable_tmpfiles = True
+
+        [inventory]
+        enable_plugins = amazon.aws.aws_ec2,yaml,ini
 
         [ssh_connection]
         # Bastion 경유 시 연결 유지를 위해 추천하는 옵션
