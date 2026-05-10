@@ -1,7 +1,7 @@
 ---
 # Service Deployment Role Defaults
 
-bootstrap_user: "{{ lookup('env', 'BOOTSTRAP_USER') }}"
+bootstrap_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
 
 # Repository
 repo_url: "https://github.com/juhy0987/azas_application_server"
