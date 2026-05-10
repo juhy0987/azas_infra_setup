@@ -31,11 +31,13 @@
 # AWS EC2 인스턴스 설정 (EC2)
 - name: "Configure AWS EC2 Instances"
   hosts: [On-Premise, EC2]
-  become: no
+  become: yes
+  become_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
   vars:
     deploy_branch: "main"
+    _deploy_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
   environment:
-    PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+    PATH: "/home/{{ _deploy_user }}/.local/bin:{{ ansible_env.PATH }}"
   roles:
     - role: service_deployment
 
