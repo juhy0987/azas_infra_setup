@@ -1,43 +1,51 @@
 ---
 
 
-
-  # 모든 대상 호스트 첫 부팅 처리: user1 + wheel + NOPASSWD + defaultkey 주입
+# 모든 대상 호스트 첫 부팅 처리
+#    - 인벤토리의 "초기" 접속 정보(그룹별 user/key) 그대로 사용
+#      · On-Premise: user1 + defaultkey  (사전 셋업되어 있다고 가정)
+#      · EC2:        ec2-user + azas-key
+#      · DB:         ec2-user + one_key
 - name: "Bootstrap all servers (user1 + defaultkey)"
   hosts: [On-Premise, EC2, DB]
   become: yes
   roles:
     - role: ec2_bootstrap
 
-  # EC2 / 온프레미스 공통 셋업 (DB 는 제외)
+# EC2 / 온프레미스 공통 셋업 (DB 제외)
 - name: "Configure On-Premise / EC2 Servers"
   hosts: [On-Premise, EC2]
   become: yes
+  vars:
+    ansible_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
+    ansible_ssh_private_key_file: "~/.ssh/defaultkey.pem"
   environment:
-    PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
-
+    PATH: "/home/{{ ansible_user }}/.local/bin:{{ ansible_env.PATH }}"
   roles:
     - role: dependency_setup
     - role: node_exporter_setup
 
-# 데이터베이스 서버 설정 (DB)
+# 데이터베이스 서버 설정
 - name: "Configure Database Servers"
   hosts: DB
   become: yes
+  vars:
+    ansible_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
+    ansible_ssh_private_key_file: "~/.ssh/defaultkey.pem"
   roles:
     - role: postgresql_setup
 
-
-# AWS EC2 인스턴스 설정 (EC2)
+# 4. AWS EC2 인스턴스 / On-Premise 서비스 배포
+#    - user1 권한으로 직접 SSH (become 우회 불필요)
 - name: "Configure AWS EC2 Instances"
   hosts: [On-Premise, EC2]
-  become: yes
-  become_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
+  become: no
   vars:
+    ansible_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
+    ansible_ssh_private_key_file: "~/.ssh/defaultkey.pem"
     deploy_branch: "main"
-    _deploy_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
   environment:
-    PATH: "/home/{{ _deploy_user }}/.local/bin:{{ ansible_env.PATH }}"
+    PATH: "/home/{{ ansible_user }}/.local/bin:{{ ansible_env.PATH }}"
   roles:
     - role: service_deployment
 
