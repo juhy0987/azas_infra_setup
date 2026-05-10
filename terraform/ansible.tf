@@ -143,7 +143,6 @@ resource "terraform_data" "ansible_provisioning" {
       python3.12 -m pip install --user --quiet boto3 botocore 2>/dev/null \
         || python3.12 -m pip install --user --quiet --break-system-packages boto3 botocore 2>/dev/null \
         || true
-      ansible-galaxy collection install amazon.aws --upgrade -q
       if [ -f .env ]; then set -a; . ./.env; set +a; fi
       ansible-playbook -i inventory.yml -i aws_ec2.yml main.yml
     EOT
