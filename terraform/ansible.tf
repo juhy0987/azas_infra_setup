@@ -76,6 +76,19 @@ resource "local_file" "ansible_inventory" {
   })
 }
 
+# IAM access key 를 ansible 디렉토리의 별도 env 파일로 기록
+#   - terraform_data 의 environment 블록에 직접 넣으면 provisioner 출력 전체가
+#     sensitive 로 마스킹되어 ansible 진행 로그를 볼 수 없음
+#   - 파일로 빼고 provisioner 안에서 source 하면 출력 정상화
+resource "local_sensitive_file" "ansible_aws_creds" {
+  filename        = "${local.ansible_dir}/.aws.env"
+  file_permission = "0600"
+  content         = <<-EOT
+    AWS_ACCESS_KEY_ID=${aws_iam_access_key.management_consumer.id}
+    AWS_SECRET_ACCESS_KEY=${aws_iam_access_key.management_consumer.secret}
+  EOT
+}
+
 # ansible.cfg 파일 생성
 #   - inventory 두 파일 병행:
 #       inventory.yml  : Terraform 정적 (On-Premise / DB / Tailscale / Local + standalone EC2)
@@ -128,13 +141,12 @@ resource "terraform_data" "ansible_provisioning" {
   triggers_replace = aws_instance.app_server.id
 
   provisioner "local-exec" {
+    # sensitive 가 아닌 값만 environment 에 — 마스킹 회피
     environment = {
-      AWS_ACCESS_KEY_ID     = aws_iam_access_key.management_consumer.id
-      AWS_SECRET_ACCESS_KEY = aws_iam_access_key.management_consumer.secret
-      AWS_REGION            = "ap-northeast-2"
-      AWS_DEFAULT_REGION    = "ap-northeast-2"
-      ASG_TASKS_QUEUE_URL   = aws_sqs_queue.asg_tasks.url
-      ANSIBLE_DIR           = local.ansible_dir
+      AWS_REGION          = "ap-northeast-2"
+      AWS_DEFAULT_REGION  = "ap-northeast-2"
+      ASG_TASKS_QUEUE_URL = aws_sqs_queue.asg_tasks.url
+      ANSIBLE_DIR         = local.ansible_dir
     }
 
     command = <<-EOT
@@ -143,6 +155,8 @@ resource "terraform_data" "ansible_provisioning" {
       python3.12 -m pip install --user --quiet boto3 botocore 2>/dev/null \
         || python3.12 -m pip install --user --quiet --break-system-packages boto3 botocore 2>/dev/null \
         || true
+      # AWS 자격증명은 local_sensitive_file 로 떨어진 .aws.env 에서 source
+      [ -f .aws.env ] && set -a && . ./.aws.env && set +a
       if [ -f .env ]; then set -a; . ./.env; set +a; fi
       ansible-playbook -i inventory.yml -i aws_ec2.yml main.yml
     EOT
