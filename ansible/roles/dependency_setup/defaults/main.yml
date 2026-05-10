@@ -4,7 +4,9 @@
 bootstrap_user: "{{ lookup('env', 'BOOTSTRAP_USER') | default('user1', true) }}"
 
 # uv settings
-uv_install_dir: "{{ lookup('env', 'HOME') }}/.local/bin"
+#   - 컨트롤러의 HOME 이 아니라 타깃의 bootstrap_user 홈으로 평가되어야 함
+#   - root 가 user1 홈에 디렉토리를 만들어 ownership 이 꼬이는 사고 방지
+uv_install_dir: "/home/{{ bootstrap_user }}/.local/bin"
 uv_bin: "{{ uv_install_dir }}/uv"
 uv_install_url: "https://astral.sh/uv/install.sh"
 uv_install_script_tmp: /tmp/uv_install.sh
