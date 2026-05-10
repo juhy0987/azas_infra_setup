@@ -1,7 +1,14 @@
 ---
 # Service Deployment Role - Main task file
 
+# On-Premise 호스트는 azas_application_server 운영 대상이 아니므로 전체 스킵
+- name: "Skip service_deployment on On-Premise hosts"
+  ansible.builtin.debug:
+    msg: "On-Premise host detected — service_deployment skipped"
+  when: "'On-Premise' in group_names"
+
 - name: "Service deployment"
+  when: "'On-Premise' not in group_names"
   block:
     # baked AMI 등 사전 적용 환경에서 app_dir 가 ec2-user 등 다른 소유로
     # 남아있을 수 있어 user1 이 chdir 조차 못하는 케이스 방어.
