@@ -111,9 +111,11 @@ resource "terraform_data" "wait_for_instance" {
 }
 
 # Ansible 실행 (Bastion 호스트를 통한 SSH 터널링 포함)
+#   - tailscale_provisioning 이 끝난 뒤에 main.yml 실행
+#   - main.yml 의 On-Premise 대상(172.16.8.x) 도달이 management 서버의 tailnet 가입에 의존
 resource "terraform_data" "ansible_provisioning" {
-  # 인스턴스와 인벤토리 파일이 준비된 후 실행
-  depends_on = [terraform_data.wait_for_instance]
+  # tailscale 터널이 올라온 뒤에만 main.yml 실행
+  depends_on = [terraform_data.tailscale_provisioning]
 
   # EC2 인스턴스가 재생성될 때마다 Ansible 다시 실행
   triggers_replace = aws_instance.app_server.id
