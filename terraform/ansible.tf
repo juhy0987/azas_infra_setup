@@ -121,9 +121,9 @@ resource "terraform_data" "ansible_provisioning" {
   triggers_replace = aws_instance.app_server.id
 
   provisioner "local-exec" {
-    # ansible 디렉토리로 이동
-    # SSH ProxyCommand를 환경변수나 인자로 주입하여 실행
-    command = "cd ${local.ansible_dir} && ansible-playbook -i inventory.yml main.yml"
+    # ansible 디렉토리로 이동, .env 가 있으면 자동 source 후 ansible-playbook 실행
+    #   - service_deployment 가 lookup('env', 'DB_USER') 등으로 ansible/.env 의 키들을 픽업
+    command = "cd ${local.ansible_dir} && if [ -f .env ]; then set -a; . ./.env; set +a; fi && ansible-playbook -i inventory.yml main.yml"
   }
 }
 

@@ -20,3 +20,13 @@
   become_user: "{{ ansible_user | default(lookup('env', 'BOOTSTRAP_USER')) | default('user1') }}"
   when: not is_running or not commits_match
   notify: restart_app
+
+- name: "4. 앱 런타임 .env 파일 생성/갱신"
+  template:
+    src: app.env.j2
+    dest: "{{ app_dir }}/.env"
+    owner: "{{ bootstrap_user }}"
+    group: "{{ bootstrap_user }}"
+    mode: "0600"
+  no_log: true
+  notify: restart_app
