@@ -3,6 +3,19 @@
 
 - name: "Service deployment"
   block:
+    # baked AMI 등 사전 적용 환경에서 app_dir 가 ec2-user 등 다른 소유로
+    # 남아있을 수 있어 user1 이 chdir 조차 못하는 케이스 방어.
+    # state: directory 라 부재 시 생성도 겸함 (fresh 환경 안전).
+    - name: "Normalize app_dir ownership to {{ bootstrap_user }}"
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ bootstrap_user }}"
+        group: "{{ bootstrap_user }}"
+        recurse: yes
+      become: yes
+      become_user: root
+
     - name: "Repository sync"
       include_tasks: repo_sync.yml
 
