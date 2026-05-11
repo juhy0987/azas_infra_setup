@@ -1,19 +1,11 @@
 ---
 # Service Deployment Role - Main task file
 
-# On-Premise 호스트는 azas_application_server 운영 대상이 아니므로 전체 스킵
-- name: "Skip service_deployment on On-Premise hosts"
-  ansible.builtin.debug:
-    msg: "On-Premise host detected — service_deployment skipped"
-  when: "'On-Premise' in group_names"
-
 - name: "Service deployment"
-  when: "'On-Premise' not in group_names"
   block:
-    # baked AMI 등 사전 적용 환경에서 app_dir 가 ec2-user 등 다른 소유로
-    # 남아있을 수 있어 user1 이 chdir 조차 못하는 케이스 방어.
-    # state: directory 라 부재 시 생성도 겸함 (fresh 환경 안전).
-    - name: "Normalize app_dir ownership to {{ bootstrap_user }}"
+    # baked AMI 환경에서만 발생하는 ownership 잔재(app_dir 가 root/ec2-user 소유)
+    # 정규화. On-Premise 는 baked AMI 가 아니므로 이 task 만 스킵.
+    - name: "Normalize app_dir ownership to {{ bootstrap_user }} (baked AMI 잔재 회피)"
       ansible.builtin.file:
         path: "{{ app_dir }}"
         state: directory
@@ -22,6 +14,7 @@
         recurse: yes
       become: yes
       become_user: root
+      when: "'On-Premise' not in group_names"
 
     - name: "Repository sync"
       include_tasks: repo_sync.yml
