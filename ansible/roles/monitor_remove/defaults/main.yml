@@ -20,3 +20,6 @@ grafana_repo_path_redhat: /etc/yum.repos.d/grafana.repo
 grafana_apt_repo: "deb https://packages.grafana.com/oss/deb stable main"
 grafana_apt_repo_filename: grafana
 grafana_apt_key_url: https://packages.grafana.com/gpg.key
+
+grafana_admin_user: "{{ lookup('env', 'GRAFANA_ADMIN_ID') }}"
+grafana_admin_password: "{{ lookup('env', 'GRAFANA_ADMIN_PW') }}"

@@ -10,3 +10,23 @@
     prometheus_version: "{{ fixed_prometheus_version }}"
     prometheus_targets: "{{ fixed_prometheus_targets }}"
     prometheus_scrape_configs: "{{ fixed_prometheus_scrape_configs }}"
+
+# 설치된 Prometheus를 Grafana의 데이터 소스로 등록
+- name: "2. Prometheus 데이터 소스 등록 (Grafana API)"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/datasources"
+    method: POST
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      name: "Prometheus"
+      uid: "{{ lookup('env', 'GRAFANA_PROMETHEUS_UID') }}"
+      type: "prometheus"
+      url: "http://localhost:9090"
+      access: "proxy"
+      isDefault: true
+      jsonData:
+        httpMethod: "POST"
+    status_code: [200, 201, 409]
