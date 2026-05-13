@@ -1,0 +1,27 @@
+---
+- name: "0. 최신 백업 파일 찾기"
+  ansible.builtin.shell:
+    cmd: "ls -t {{ mgmt_backup_dir }}/full_db_backup_*.sql | head -1"
+  register: latest_backup
+  delegate_to: localhost
+  become: no
+
+- name: "1. mgmt 백업 파일을 db EC2로 전송"
+  ansible.builtin.copy:
+    src: "{{ restore_filename | default(latest_backup.stdout | trim) }}"
+    dest: "/tmp/{{ restore_filename | default(latest_backup.stdout | trim | basename) }}"
+    owner: postgres
+    group: postgres
+    mode: '0644'
+
+- name: "2. 백업파일로 전체 데이터 복구"
+  ansible.builtin.shell:
+    cmd: "psql -f /tmp/{{ restore_filename | default(latest_backup.stdout | trim | basename) }} postgres"
+  become_user: postgres
+  ignore_errors: yes
+  register: restore_result
+
+- name: "3. 복구 결과 확인"
+  ansible.builtin.debug:
+    msg: "데이터 복구 작업이 완료되었습니다"
+  when: restore_result is succeeded

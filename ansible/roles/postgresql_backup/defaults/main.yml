@@ -1,0 +1,8 @@
+---
+backup_dir: /tmp
+backup_filename: "full_db_backup_{{ ansible_date_time.date }}.sql"
+backup_path: "{{ backup_dir }}/{{ backup_filename }}"
+backup_user: postgres
+keep_days: 7
+
+mgmt_backup_dir: /tmp
