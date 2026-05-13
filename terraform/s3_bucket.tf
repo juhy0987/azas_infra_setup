@@ -33,7 +33,7 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 
 # 생성 버킷이름 local_file 로 넘김 (ansible에서 사용)
 resource "local_file" "ansible_s3_vars" {
-    filename = "${path.module}/../ansible/roles/pg_backup/vars/s3_vars.yml"
+    filename = "${path.module}/../ansible/roles/postgresql_backup/vars/s3_vars.yml"
     content  = yamlencode({
         s3_bucket_name = aws_s3_bucket.app_bucket.id
     })
