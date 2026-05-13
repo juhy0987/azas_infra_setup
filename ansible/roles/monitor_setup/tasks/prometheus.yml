@@ -34,4 +34,4 @@
 
 - name: "데이터 소스 UID 변수 설정"
   ansible.builtin.set_fact: # 실행되는 도중 결정
-    grafana_ds_uid: "prom-datasource-azas"
+    grafana_datasource_uid: "prom-datasource-azas"
