@@ -251,7 +251,7 @@
             type: "timeseries"
             gridPos: { h: 8, w: 8, x: 0, y: 0 }
             targets:
-              - expr: "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode='idle'}[1m])) * 100)"
+              - expr: "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode='idle', instance=~'$instance'}[1m])) * 100)"
                 legendFormat: "{% raw %}{{instance}}{% endraw %}"
 
           # --- 메모리 패널 ---
@@ -259,7 +259,7 @@
             type: "timeseries"
             gridPos: { h: 8, w: 8, x: 8, y: 0 }
             targets:
-              - expr: "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100"
+              - expr: "(1 - (node_memory_MemAvailable_bytes{instance=~'$instance'} / node_memory_MemTotal_bytes)) * 100"
                 legendFormat: "{% raw %}{{instance}}{% endraw %}"
 
           # --- 네트워크 패널 ---
@@ -267,7 +267,7 @@
             type: "timeseries"
             gridPos: { h: 8, w: 8, x: 16, y: 0 }
             targets:
-              - expr: "rate(node_network_receive_packets_total{device='ens160'}[1m])"
+              - expr: "sum by (instance) (rate(node_network_receive_packets_total{device!~'lo|docker.*', instance=~'$instance'}[1m]))"
                 legendFormat: "{% raw %}{{instance}}{% endraw %}"
         schemaVersion: 36
       overwrite: true
