@@ -1,7 +1,7 @@
 # ~/ansible/postgresql_backup.yml
 ---
 - name: PostgreSQL 백업 실행
-  hosts: db_server
+  hosts: DB
   become: yes
   gather_facts: yes
   
