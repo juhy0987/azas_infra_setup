@@ -1,0 +1,73 @@
+---
+- name: 백업 디렉토리 존재 확인 및 생성
+  ansible.builtin.file:
+    path: "{{ backup_dir }}"
+    state: directory
+    mode: '1777'
+
+- name: PostgreSQL 서비스 활성 상태 확인
+  ansible.builtin.command: systemctl is-active postgresql
+  register: pg_status
+  changed_when: false
+  failed_when: pg_status.stdout != "active"
+
+- name: pg_dumpall 실행 - 전체 DB 백업
+  ansible.builtin.command:
+    cmd: "pg_dumpall -f {{ backup_path }}"
+  become: yes
+  become_user: "{{ backup_user }}"
+  register: backup_result
+  changed_when: true
+
+- name: 백업 파일 존재 및 크기 확인
+  ansible.builtin.stat:
+    path: "{{ backup_path }}"
+  register: backup_stat
+
+- name: 백업 결과 출력
+  ansible.builtin.debug:
+    msg:
+      - "백업 파일 경로 : {{ backup_path }}"
+      - "파일 크기      : {{ (backup_stat.stat.size / 1024 / 1024) | round(2) }} MB"
+      - "생성 시각      : {{ ansible_date_time.iso8601 }}"
+
+- name: 백업 파일 미생성 시 실패 처리
+  ansible.builtin.fail:
+    msg: "백업 파일이 생성되지 않았거나 크기가 0입니다."
+  when: not backup_stat.stat.exists or backup_stat.stat.size == 0
+
+- name: 오래된 백업 파일 삭제 ({{ keep_days }}일 초과)
+  ansible.builtin.find:
+    paths: "{{ backup_dir }}"
+    patterns: "full_db_backup_*.sql"
+    age: "{{ keep_days }}d"
+    recurse: no
+  register: old_backups
+
+- name: 오래된 파일 제거
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ old_backups.files }}"
+  when: old_backups.files | length > 0
+
+- name: 삭제된 오래된 백업 목록 출력
+  ansible.builtin.debug:
+    msg: "삭제된 파일: {{ old_backups.files | map(attribute='path') | list }}"
+  when: old_backups.files | length > 0
+
+- name: mgmt 서버로 백업 파일 가져오기
+  ansible.builtin.fetch:
+    src: "{{ backup_path }}"
+    dest: "{{ mgmt_backup_dir }}/"
+    flat: yes
+
+- name: S3 변수 로드
+  ansible.builtin.include_vars:
+    file: "{{ role_path }}/vars/s3_vars.yml"
+
+- name: S3에 백업 파일 업로드
+  ansible.builtin.command:
+    cmd: "aws s3 cp {{ mgmt_backup_dir }}/{{ backup_filename }} s3://{{ s3_bucket_name }}/{{ backup_filename }}"
+  delegate_to: localhost
+  become: no
