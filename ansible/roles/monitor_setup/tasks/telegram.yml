@@ -47,12 +47,12 @@
       condition: "C"
       data:
         - refId: "A"
-          datasourceUid: "{{ lookup('env', 'GRAFANA_DS_UID') }}"
+          datasourceUid: "{{ grafana_ds_uid }}"
           relativeTimeRange: { from: 300, to: 60 }
           model:
             datasource:
               type: "prometheus"
-              uid: "{{ lookup('env', 'GRAFANA_DS_UID') }}"
+              uid: "{{ grafana_ds_uid }}"
             expr: "round(100 - (avg by (instance) (irate(node_cpu_seconds_total{mode='idle'}[1m])) * 100), 0.1)"
             refId: "A"
         - refId: "B"
@@ -106,12 +106,12 @@
       condition: "C"
       data:
         - refId: "A"
-          datasourceUid: "{{ lookup('env', 'GRAFANA_DS_UID') }}"
+          datasourceUid: "{{ grafana_ds_uid }}"
           relativeTimeRange: { from: 300, to: 60 }
           model:
             datasource:
               type: "prometheus"
-              uid: "{{ lookup('env', 'GRAFANA_DS_UID') }}"
+              uid: "{{ grafana_ds_uid }}"
             expr: "round(avg by (instance) ((1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100), 0.1)"
             refId: "A"
         - refId: "B" 
@@ -165,12 +165,12 @@
       condition: "C"
       data:
         - refId: "A"
-          datasourceUid: "{{ lookup('env', 'GRAFANA_DS_UID') }}"
+          datasourceUid: "{{ grafana_ds_uid }}"
           relativeTimeRange: { from: 300, to: 60 }
           model:
             datasource:
               type: "prometheus"
-              uid: "{{ lookup('env', 'GRAFANA_DS_UID') }}"
+              uid: "{{ grafana_ds_uid }}"
             expr: "round(sum by (instance) (rate(node_network_receive_packets_total{device!~'lo|docker.*'}[1m])), 0.1)"
             refId: "A"
         - refId: "B" 
