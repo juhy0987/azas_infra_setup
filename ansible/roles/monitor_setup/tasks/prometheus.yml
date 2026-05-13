@@ -22,7 +22,7 @@
     body_format: json
     body:
       name: "Prometheus"
-      uid: "{{ lookup('env', 'GRAFANA_DS_UID') }}"
+      uid: "{{ grafana_datasource_uid }}"
       type: "prometheus"
       url: "http://localhost:9090"
       access: "proxy"
