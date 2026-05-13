@@ -3,7 +3,7 @@
   ansible.builtin.file:
     path: "{{ backup_dir }}"
     state: directory
-    mode: '0700'
+    mode: '1777'
 
 - name: PostgreSQL 서비스 활성 상태 확인
   ansible.builtin.command: systemctl is-active postgresql
