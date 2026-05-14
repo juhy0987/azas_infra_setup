@@ -12,10 +12,16 @@
     - name: "OS-specific 변수 로드"
       include_vars: "{{ ansible_os_family }}.yml"
 
-    - name: "Prometheus 설치"
-      include_tasks: prometheus.yml
-      when: "'prometheus' in monitoring_components"
-
     - name: "Grafana 설치"
       include_tasks: grafana.yml
       when: "'grafana' in monitoring_components"
+
+    - name: "Prometheus 설치 및 데이터 소스(Prometheus) 등록"
+      include_tasks: prometheus.yml
+      when: "'prometheus' in monitoring_components"
+
+    - name: "알림 설정 (Telegram)"
+      include_tasks: telegram.yml
+      when: 
+        - "'grafana' in monitoring_components"
+        - "telegram_bot_token is defined and telegram_bot_token != ''"

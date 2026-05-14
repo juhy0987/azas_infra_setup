@@ -1,0 +1,274 @@
+
+# 1. 알림 채널 생성
+- name: "Telegram Contact Point 생성 (Grafana API)"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/v1/provisioning/contact-points"
+    method: POST
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      name: "AZAS_Telegram_Alert"
+      type: "telegram"
+      settings:
+        bottoken: "{{ telegram_bot_token }}"
+        chatid: "{{ telegram_chat_id }}"
+    status_code: [200, 202, 207]
+
+# 2. 알람 규칙을 담을 폴더 생성
+- name: "알람용 폴더 생성 (Grafana API)"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/folders"
+    method: POST
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      uid: "monitoring"
+      title: "Monitoring_Alerts"
+    status_code: [200, 201, 207, 409, 412] # 409는 이미 폴더가 있을 경우 무시한다는 뜻
+
+# 3. CPU 알람 규칙 생성
+- name: "CPU 임계치 알람 규칙 생성"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/v1/provisioning/alert-rules"
+    method: POST
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      name: "CPU_Overload_Alert"
+      title: "CPU_Overload_Alert"
+      folderUID: "monitoring"
+      ruleGroup: "CPU_Metrics"
+      condition: "C"
+      data:
+        - refId: "A"
+          datasourceUid: "{{ grafana_datasource_uid }}"
+          relativeTimeRange: { from: 300, to: 60 }
+          model:
+            datasource:
+              type: "prometheus"
+              uid: "{{ grafana_datasource_uid }}"
+            expr: "round(100 - (avg by (instance) (irate(node_cpu_seconds_total{mode='idle'}[1m])) * 100), 0.1)"
+            refId: "A"
+        - refId: "B"
+          datasourceUid: "-100"
+          relativeTimeRange: { from: 300, to: 60 }
+          model:
+            expression: "A"
+            type: "reduce"
+            reducer: "last"
+            settings:
+              mode: "dropNN"
+            refId: "B"
+        - refId: "C" # [필수] B를 기준으로 판단
+          datasourceUid: "-100"
+          relativeTimeRange: { from: 300, to: 60 }
+          model:
+            expression: "B"
+            type: "threshold"
+            conditions:
+              - type: "gt"
+                evaluator: { params: [80], type: "gt" }
+            refId: "C"
+      noDataState: "OK"
+      execErrState: "Error" # 에러 발생 시
+      for: "1m" # 대응속도
+      annotations:
+        summary: "{% raw %}CPU 부하 발생 (대상: {{ $labels.instance }}){% endraw %}"
+        description: |
+          현재 CPU 사용량이 80%를 초과했습니다.
+          
+          {% raw %}- 대상 서버: {{ $labels.instance }}{% endraw %}
+          {% raw %}- 현재 수치: {{ $values.B | printf "%.1f" }}%{% endraw %}
+      labels:
+        severity: "critical"
+    status_code: [200, 201, 207]
+
+# 4. 메모리 알람 규칙 생성
+- name: "메모리 임계치 알람 규칙 생성"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/v1/provisioning/alert-rules"
+    method: POST
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      name: "Memory_High_Usage_Alert"
+      title: "Memory_High_Usage_Alert"
+      folderUID: "monitoring"
+      ruleGroup: "MEMORY_Metrics"
+      condition: "C"
+      data:
+        - refId: "A"
+          datasourceUid: "{{ grafana_datasource_uid }}"
+          relativeTimeRange: { from: 300, to: 60 }
+          model:
+            datasource:
+              type: "prometheus"
+              uid: "{{ grafana_datasource_uid }}"
+            expr: "round(avg by (instance) ((1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100), 0.1)"
+            refId: "A"
+        - refId: "B" 
+          datasourceUid: "-100"
+          relativeTimeRange: { from: 300, to: 60 }
+          model:
+            expression: "A"
+            type: "reduce"
+            reducer: "last"
+            settings:
+              mode: "dropNN"
+            refId: "B"
+        - refId: "C" 
+          datasourceUid: "-100"
+          relativeTimeRange: { from: 300, to: 60 }
+          model:
+            expression: "B"
+            type: "threshold"
+            conditions:
+              - type: "gt"
+                evaluator: { params: [80], type: "gt" }
+            refId: "C"
+      noDataState: "OK"
+      execErrState: "Error" # 에러 발생 시
+      for: "1m" # 대응속도
+      annotations:
+        summary: "{% raw %}메모리 부족 발생 (대상: {{ $labels.instance }}){% endraw %}"
+        description: |
+          메모리 사용량이 80%를 초과했습니다.
+          
+          {% raw %}- 대상 서버: {{ $labels.instance }}{% endraw %}
+          {% raw %}- 현재 수치: {{ $values.B | printf "%.1f" }}%{% endraw %}
+      labels:
+        severity: "critical"
+    status_code: [200, 201, 207]
+
+# 5. 네트워크 알람 규칙 생성
+- name: "트래픽 폭주 알람 규칙 생성"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/v1/provisioning/alert-rules"
+    method: POST
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      name: "High_Traffic_Alert"
+      title: "High_Traffic_Alert"
+      folderUID: "monitoring"
+      ruleGroup: "Network_Metrics"
+      condition: "C"
+      data:
+        - refId: "A"
+          datasourceUid: "{{ grafana_datasource_uid }}"
+          relativeTimeRange: { from: 300, to: 60 }
+          model:
+            datasource:
+              type: "prometheus"
+              uid: "{{ grafana_datasource_uid }}"
+            expr: "round(sum by (instance) (rate(node_network_receive_packets_total{device!~'lo|docker.*'}[1m])), 0.1)"
+            refId: "A"
+        - refId: "B" 
+          datasourceUid: "-100"
+          relativeTimeRange: { from: 300, to: 60 }
+          model:
+            expression: "A" 
+            type: "reduce"
+            reducer: "last"
+            settings:
+              mode: "dropNN"
+            refId: "B"
+        - refId: "C" 
+          datasourceUid: "-100"
+          relativeTimeRange: { from: 300, to: 60 }
+          model:
+            expression: "B"
+            type: "threshold"
+            conditions:
+              - type: "gt"
+                evaluator: { params: [1000], type: "gt" }
+            refId: "C"
+      noDataState: "OK"
+      execErrState: "Error" # 에러 발생 시
+      for: "1m" # 대응속도
+      annotations:
+        summary: "{% raw %}네트워크 트래픽 폭주 (대상: {{ $labels.instance }}){% endraw %}"
+        description: |
+          초당 유입 패킷이 급증했습니다.
+          
+          {% raw %}- 대상 서버: {{ $labels.instance }}{% endraw %}
+          {% raw %}- 현재 수치: {{ $values.B | printf "%.1f" }} pkts/s{% endraw %}
+      labels:
+        severity: "warning"
+    status_code: [200, 201, 207]
+
+# 6. 기본 알림 정책을 텔레그램으로 설정
+- name: "기본 알림 정책을 텔레그램으로 연결"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/v1/provisioning/policies"
+    method: PUT
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      receiver: "AZAS_Telegram_Alert"  # 우리가 만든 컨택 포인트 이름
+      group_by: ["alertname"]
+      group_wait: "5s" # 알람이 생성된 후 텔레그램으로 전달되는 대기 시간
+      group_interval: "1m"
+      repeat_interval: "4h"
+    status_code: [200, 202]
+
+- name: "기본 모니터링 대시보드 생성 (API)"
+  ansible.builtin.uri:
+    url: "http://localhost:3000/api/dashboards/db"
+    method: POST
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      dashboard:
+        title: "Server_Metrics_Dashboard"
+        uid: "monitoring"
+        templating:
+          list:
+            - name: "instance"
+              type: "query"
+              query: "label_values(node_cpu_seconds_total, instance)"
+              datasource: "Prometheus"
+              refresh: 1
+              multi: true
+              includeAll: true
+        panels:
+          # --- CPU 패널 ---
+          - title: "CPU Usage (%)"
+            type: "timeseries"
+            gridPos: { h: 8, w: 8, x: 0, y: 0 }
+            targets:
+              - expr: "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode='idle', instance=~'$instance'}[1m])) * 100)"
+                legendFormat: "{% raw %}{{instance}}{% endraw %}"
+
+          # --- 메모리 패널 ---
+          - title: "Memory Usage (%)"
+            type: "timeseries"
+            gridPos: { h: 8, w: 8, x: 8, y: 0 }
+            targets:
+              - expr: "(1 - (node_memory_MemAvailable_bytes{instance=~'$instance'} / node_memory_MemTotal_bytes)) * 100"
+                legendFormat: "{% raw %}{{instance}}{% endraw %}"
+
+          # --- 네트워크 패널 ---
+          - title: "Network Traffic (pkts/s)"
+            type: "timeseries"
+            gridPos: { h: 8, w: 8, x: 16, y: 0 }
+            targets:
+              - expr: "sum by (instance) (rate(node_network_receive_packets_total{device!~'lo|docker.*', instance=~'$instance'}[1m]))"
+                legendFormat: "{% raw %}{{instance}}{% endraw %}"
+        schemaVersion: 36
+      overwrite: true
+    status_code: [200, 201]
