@@ -136,7 +136,7 @@ resource "aws_lb_target_group" "aws_tg" {
     healthy_threshold   = 2
     unhealthy_threshold = 2
     # 핵심: 200(정상)뿐만 아니라 FastAPI가 내뱉는 405도 정상으로 간주
-    matcher             = "200" 
+    matcher             = "200,405" 
   }
 
   lifecycle {
@@ -207,7 +207,7 @@ resource "aws_lb_target_group" "onprem_tg" {
     timeout             = 5
     healthy_threshold   = 2
     unhealthy_threshold = 2
-    matcher             = "200"
+    matcher             = "200,405"
   }
 
   lifecycle {
