@@ -1,0 +1,5 @@
+---
+- name: DB 백업 실행
+  block:
+    - name: PostgreSQL 백업 실행  
+      include_tasks: backup.yml

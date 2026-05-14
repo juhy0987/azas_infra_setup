@@ -44,3 +44,9 @@
     name: grafana-server
     state: started
     enabled: yes
+
+- name: "8. Grafana 포트(3000) 오픈 대기"
+  ansible.builtin.wait_for:
+    port: 3000
+    delay: 3        # 시작 후 3초 뒤부터 체크 시작
+    timeout: 30     # 최대 30초까지 기다림

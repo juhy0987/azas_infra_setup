@@ -1,11 +1,10 @@
 # ~/ansible/ec2_bootstrap.yml
 ---
-- name: "Linux 인스턴스 초기 셋팅"
-  hosts: [EC2, DB]
-  gather_facts: no
+- name: "Ubuntu EC2 인스턴스 초기 셋팅"
+  hosts: EC2
+  gather_facts: yes
   become: yes
-  remote_user: "{{ bootstrap_remote_user | default('ec2-user') }}"
+  remote_user: "{{ bootstrap_remote_user | default('ubuntu') }}"
 
   roles:
     - ec2_bootstrap
-    

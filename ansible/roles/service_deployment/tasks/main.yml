@@ -3,6 +3,19 @@
 
 - name: "Service deployment"
   block:
+    # baked AMI 환경에서만 발생하는 ownership 잔재(app_dir 가 root/ec2-user 소유)
+    # 정규화. On-Premise 는 baked AMI 가 아니므로 이 task 만 스킵.
+    - name: "Normalize app_dir ownership to {{ bootstrap_user }} (baked AMI 잔재 회피)"
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ bootstrap_user }}"
+        group: "{{ bootstrap_user }}"
+        recurse: yes
+      become: yes
+      become_user: root
+      when: "'On-Premise' not in group_names"
+
     - name: "Repository sync"
       include_tasks: repo_sync.yml
 

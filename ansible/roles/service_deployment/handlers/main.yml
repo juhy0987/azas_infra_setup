@@ -17,6 +17,9 @@
 - name: 서비스 기동
   listen: restart_app
   shell: |
+    set -a
+    [ -f .env ] && . ./.env
+    set +a
     nohup .venv/bin/uvicorn main:app \
       --host {{ app_host }} --port {{ app_port }} \
       > {{ log_file }} 2>&1 </dev/null &

@@ -1,0 +1,31 @@
+---
+# 동적 인벤토리 (amazon.aws.aws_ec2 플러그인)
+#   - ASG / standalone 인스턴스를 AWS API 로 매 실행 시점에 새로 조회
+#   - inventory.yml 의 정적 그룹과 병행 사용 (ansible.cfg 의 inventory 다중 지정)
+plugin: amazon.aws.aws_ec2
+regions:
+  - ap-northeast-2
+
+# Tag 기반으로 azas 관련 인스턴스만 픽업
+filters:
+  instance-state-name: running
+  tag:Name:
+    - azas-ec2
+    - project-asg-instance
+
+# ansible 이 호스트키로 사용할 IP — 베스천이 advertise 한 VPC CIDR 을
+# Tailscale 로 받고 있어 management 서버에서 private IP 로 직접 접근 가능
+hostnames:
+  - private-ip-address
+
+# 그룹 매핑 — 정적 inventory 의 EC2 그룹 변수와 합쳐짐
+keyed_groups:
+  - key: tags.Name
+    prefix: tag
+groups:
+  EC2: true
+
+# 첫 SSH 시 사용할 connection 정보 (main.yml 의 play 별 vars 가 이후 오버라이드)
+compose:
+  ansible_user: "'ec2-user'"
+  ansible_ssh_private_key_file: "'./azas-key.pem'"
