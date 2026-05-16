@@ -70,7 +70,7 @@ variable "onprem_target_ips" {
 variable "alb_aws_weight" {
   description = "ALB HTTPS default action 에서 AWS target group 가중치"
   type        = number
-  default     = 0
+  default     = 1
 }
 
 variable "alb_onprem_weight" {
