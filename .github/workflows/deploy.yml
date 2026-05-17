@@ -19,8 +19,7 @@ jobs:
     steps:
       - name: 1) git pull
         run: |
-          git fetch --all --prune
-          git pull --rebase
+          git pull
 
       - name: 2) Bump terraform required_version
         env:
