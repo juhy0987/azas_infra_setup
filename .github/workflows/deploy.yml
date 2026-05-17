@@ -84,18 +84,7 @@ jobs:
               user1@"$host"
           done
 
-      - name: 7) Tailscale status check
-        run: |
-          set -e
-          if ! sudo tailscale status >/dev/null 2>&1; then
-            echo "tailscale not up — bringing it up"
-            sudo tailscale up \
-              --auth-key='${{ secrets.TAILSCALE_AUTH_KEY }}' \
-              --accept-routes
-          fi
-          sudo tailscale status
-
-      - name: 8-10) terraform init / plan / apply
+      - name: 7-9) terraform init / plan / apply
         working-directory: /home/user1/azas_infra_setup/terraform
         run: |
           set -e
