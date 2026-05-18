@@ -265,4 +265,4 @@ source ~/.bashrc
 | **Secrets** | `TELEGRAM_BOT_TOKEN` | 장애 상황(온프레미스 부하 등) 발생 시 알림을 전송할 텔레그램 봇 토큰 값 |
 | **Secrets** | `TELEGRAM_CHAT_ID` | 텔레그램 알림을 수신할 대상 대화방(채팅방)의 고유 ID 값 |
 | **Secrets** | `GRAFANA_ADMIN_ID` | 모니터링 및 대시보드 확인을 위한 Grafana 관리자 로그인 ID |
-| **Secrets** | `GRAFANA_ADMIN_PW` | 모니터링 및 대시보드 확인을 위한 Grafana 관리자 로그인 비밀번호 |
+| **Secrets** | `GRAFANA_ADMIN_PW` | 모니터링 및 대시보드 확인을 위한 Grafana 관리자 로그인 비밀번호 | 
