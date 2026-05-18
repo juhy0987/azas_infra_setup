@@ -1,0 +1,94 @@
+name: Deploy azas infra (mgmt)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tf_version:
+        description: "Terraform required_version value (literal — include ~> if you want a constraint)"
+        required: false
+        default: "~>1.15.0"
+
+jobs:
+  deploy:
+    runs-on: [self-hosted]
+    defaults:
+      run:
+        working-directory: /home/user1/azas_infra_setup
+        shell: bash
+
+    steps:
+      - name: 1) git pull
+        run: |
+          git pull
+
+      - name: 2) Bump terraform required_version
+        env:
+          NEW_TF_VER: ${{ inputs.tf_version }}
+        run: |
+          set -e
+          mapfile -t files < <(grep -rl 'required_version' terraform)
+          for f in "${files[@]}"; do
+            sed -i -E "s|(required_version[[:space:]]*=[[:space:]]*)\"[^\"]*\"|\1\"${NEW_TF_VER}\"|" "$f"
+            echo "[updated] $f"
+          done
+          grep -rn 'required_version' terraform
+
+      - name: 3) Write terraform/terraform.tfvars
+        run: |
+          cat > terraform/terraform.tfvars <<EOF
+          domain_name="${{ secrets.DOMAIN_NAME }}"
+          onprem_rocky_ip="${{ secrets.ONPREM_ROCKY_IP }}"
+          onprem_ubuntu_ip="${{ secrets.ONPREM_UBUNTU_IP }}"
+          db_server_ip="${{ secrets.DB_SERVER_IP }}"
+          BOOTSTRAP_USER="${{ secrets.BOOTSTRAP_USER }}"
+          EOF
+          chmod 600 terraform/terraform.tfvars
+
+      - name: 4) Write terraform/.env
+        run: |
+          cat > terraform/.env <<EOF
+          export TAILSCALE_AUTH_KEY=${{ secrets.TAILSCALE_AUTH_KEY }}
+          export TAILSCALE_API_KEY=${{ secrets.TAILSCALE_API_KEY }}
+          export TAILNET_NAME=${{ secrets.TAILNET_NAME }}
+          export GRAFANA_ADMIN_ID=${{ secrets.GRAFANA_ADMIN_ID }}
+          export GRAFANA_ADMIN_PW=${{ secrets.GRAFANA_ADMIN_PW }}
+          export TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+          export TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
+          export BOOTSTRAP_USER=${{ secrets.BOOTSTRAP_USER }}
+          EOF
+          chmod 600 terraform/.env
+
+      - name: 5) Write ansible/.env
+        run: |
+          cat > ansible/.env <<EOF
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASS=${{ secrets.DB_PASS }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          POSTGRES_ADMIN_PASSWORD=${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+          ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+          BOOTSTRAP_USER=${{ secrets.BOOTSTRAP_USER }}
+          EOF
+          chmod 600 ansible/.env
+
+      - name: 6) ssh-copy-id to rocky & ubuntu
+        env:
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
+          PUBKEY: /home/user1/.ssh/defaultkey.pem.pub
+        run: |
+          set -e
+          for host in ${{ secrets.ONPREM_ROCKY_IP }} ${{ secrets.ONPREM_UBUNTU_IP }}; do
+            sshpass -e ssh-copy-id -f \
+              -i "$PUBKEY" \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              user1@"$host"
+          done
+
+      - name: 7-9) terraform init / plan / apply
+        working-directory: /home/user1/azas_infra_setup/terraform
+        run: |
+          set -e
+          source ./.env
+          terraform init -input=false
+          terraform plan -input=false -out=tfplan
+          terraform apply -auto-approve -parallelism=3 tfplan
