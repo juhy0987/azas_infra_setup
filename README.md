@@ -119,7 +119,6 @@ EX
      alt="aws구조">
 </p>
 
-
 #### 3. CI/CD 파이프라인 구성도
 <p align="center">
 <img src="./asset/CI_CD Pipe line.drawio.png" 
