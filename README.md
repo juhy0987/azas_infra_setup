@@ -227,6 +227,16 @@ variable "alb_onprem_weight" {
 `엔서블 변수 설정`
 - Ansible Role은 하드코딩을 배제하고 외부 환경 변수 패턴을 사용하여 설계
 
+#### [ansible/.env 작성 예시]
+```env
+DB_USER=scott                                 # DB 사용자 계정명        
+DB_PASS="DB_PASSWORD"                         # DB 사용자 비밀번호
+DB_NAME=scott_db                              # 데이터베이스 이름
+POSTGRES_ADMIN_PASSWORD="POSTGRES_PASSWORD"   # PostgreSQL 관리자 비밀번호
+ADMIN_PASSWORD="ADMIN_PASSWORD"               # 임시 관리자 비밀번호
+BOOTSTRAP_USER=user1                          # 원격 로그인 USER
+```
+
 
 #### [~/.bashrc 작성 예시]
 
